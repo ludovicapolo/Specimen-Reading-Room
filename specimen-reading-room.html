@@ -1,0 +1,2005 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Specimen Reading Room</title>
+<style>
+/* ---------------------------------------------------------------
+   TOKEN — per coordinare la grafica cambia solo questo blocco
+   --------------------------------------------------------------- */
+:root{
+  --paper:#FFFDFB;
+  --panel:#FFFFFF;
+  --ink:#25232A;
+  --muted:#7C7885;
+  --rule:#E9E5EE;
+
+  /* pastelli ripresi dalle campiture della tavola */
+  --lilla:#E9E4F6;      --lilla-b:#C9BEE8;
+  --menta:#DFEFE4;      --menta-b:#B4D9C1;
+  --pesca:#FBE7D8;      --pesca-b:#EEC5A5;
+  --cielo:#DEEBF7;      --cielo-b:#B3D2ED;
+  --rosa:#FAE1EC;       --rosa-b:#EFB9D2;
+
+  --accent:#8A6FD1;
+  --accent-soft:var(--lilla);
+  --flag:#C2417C;
+  --flag-soft:var(--rosa);
+
+  --font-ui:-apple-system,"Segoe UI",Inter,Helvetica,Arial,sans-serif;
+  --font-data:"SF Mono",ui-monospace,"Roboto Mono",Menlo,Consolas,monospace;
+  --radius:4px;
+}
+
+/* --------------------------------------------------------------- */
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;background:var(--paper);color:var(--ink);
+  font:14px/1.6 var(--font-ui);
+  -webkit-font-smoothing:antialiased;
+}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* layout ---------------------------------------------------- */
+.app{display:flex;flex-direction:column;height:100%}
+/* testata: le viste principali sono linguette da faldone che poggiano sul contenuto;
+   lingua e impostazioni stanno a destra, in secondo piano */
+header.bar{
+  display:flex;align-items:flex-end;gap:0;
+  padding:0 22px;min-height:58px;background:var(--panel);
+  border-bottom:1px solid var(--rule);flex-wrap:wrap;
+}
+header.bar h1{font-size:16px;font-weight:650;margin:0;letter-spacing:-.2px;
+  width:262px;flex:none;align-self:center}
+header.bar .sub{color:var(--muted);font-size:13px}
+nav.views{display:flex;gap:4px;align-items:flex-end;margin-bottom:-1px}
+nav.views button{
+  position:relative;background:var(--lilla);color:var(--muted);
+  border:1px solid var(--rule);border-bottom:0;border-radius:9px 9px 0 0;
+  padding:8px 22px 9px;font-weight:500;letter-spacing:.1px;
+}
+nav.views button:hover{color:var(--ink);background:#E1DAF3}
+nav.views button[aria-current="true"]{
+  background:var(--paper);color:var(--ink);font-weight:650;
+  border-top:3px solid var(--lilla-b);padding-top:6px;padding-bottom:10px;z-index:1;
+}
+.bar-tools{margin-left:auto;align-self:center;display:flex;align-items:center;gap:4px}
+@media (max-width:700px){ header.bar h1{width:auto;margin-right:18px} }
+
+.main{flex:1;display:flex;min-height:0}
+aside{
+  width:284px;flex:none;border-right:1px solid var(--rule);
+  background:linear-gradient(180deg,var(--cielo) 0,var(--cielo) 66px,var(--panel) 66px);display:flex;flex-direction:column;min-height:0;
+}
+aside .aside-head{padding:14px 16px 10px;border-bottom:1px solid var(--rule)}
+aside .list{overflow:auto;flex:1}
+.rec{
+  padding:8px 16px;border-bottom:1px solid var(--rule);cursor:pointer;
+  display:flex;gap:10px;align-items:center;
+}
+.rec:hover{background:var(--cielo)}
+.rec[aria-selected="true"]{background:var(--lilla);box-shadow:inset 4px 0 0 var(--lilla-b)}
+.rec .nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rec .st{font:11px/1 var(--font-data);color:var(--muted)}
+.rec .st.done{color:#4E9A6B}
+.rec .st.flag{color:var(--flag)}
+
+section.pane{flex:1;overflow:auto;padding:22px 26px 60px;min-width:0}
+
+/* generic ---------------------------------------------------- */
+h2{font-size:15px;font-weight:600;margin:0 0 4px}
+h3{font-size:13px;font-weight:600;margin:26px 0 8px;color:var(--muted)}
+p.note{color:var(--muted);font-size:12px;line-height:1.7;margin:4px 0 14px;max-width:64ch}
+.btn{
+  background:var(--ink);color:#fff;border:0;border-radius:var(--radius);
+  padding:7px 15px;font-weight:500;
+}
+.btn:disabled{opacity:.4;cursor:default}
+.btn.ghost{background:#fff;color:var(--ink);border:1px solid var(--rule)}
+.btn.ghost:hover{background:var(--lilla)}
+.btn.small{padding:4px 10px;font-size:13px}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+label.f{display:block;font-size:12px;color:var(--muted);margin-bottom:3px}
+input[type=text],input[type=password],select{
+  border:1px solid var(--rule);border-radius:var(--radius);padding:6px 8px;background:#fff;
+}
+input[type=text],input[type=password]{width:100%}
+.empty{color:var(--muted);max-width:60ch;margin-top:40px}
+.empty h2{color:var(--ink);margin-bottom:8px}
+
+/* scheda ------------------------------------------------------ */
+.sheet{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:34px;align-items:start}
+@media (max-width:1000px){.sheet{grid-template-columns:1fr}}
+.thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px}
+.thumb{position:relative;border:1px solid var(--rule);background:#fff;padding:4px}
+.thumb img{width:100%;display:block;aspect-ratio:3/4;object-fit:contain}
+.thumb .cap{font:10px/1.3 var(--font-data);color:var(--muted);margin-top:3px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.thumb.cover{border-color:var(--pesca-b);box-shadow:0 0 0 2px var(--pesca)}
+.thumb .setcov{
+  position:absolute;top:6px;right:6px;background:#fff;border:1px solid var(--rule);
+  border-radius:var(--radius);font-size:11px;padding:1px 5px;display:none;
+}
+.thumb:hover .setcov{display:block}
+
+/* tabella dei parametri, impaginata come un listino */
+table.grid{width:100%;border-collapse:collapse}
+table.grid th{
+  text-align:left;font-weight:600;font-size:12px;color:var(--muted);
+  padding:14px 0 5px;border-bottom:2px solid var(--lilla-b);
+}
+table.grid td{
+  padding:5px 0;border-bottom:1px solid var(--rule);vertical-align:baseline;
+}
+table.grid td.k{width:46%;color:var(--muted);font-size:13px;padding-right:10px}
+table.grid td.v select{width:100%;border-color:transparent;background:transparent;padding:3px 4px}
+table.grid td.v select:hover{border-color:var(--lilla-b);background:#fff}
+table.grid tr.diff td{background:var(--rosa)}
+table.grid tr.diff td.k{color:var(--flag)}
+.was{font:11px/1.4 var(--font-data);color:var(--flag);display:block}
+.chips{display:flex;flex-wrap:wrap;gap:5px;padding:4px 0}
+.chip{
+  border:1px solid var(--rule);border-radius:var(--radius);padding:2px 8px;font-size:13px;
+  background:#fff;color:var(--muted);
+}
+.chip[aria-pressed="true"]{border-color:var(--menta-b);background:var(--menta);color:#2F6B47}
+.kw{font-size:13px}
+.kw li{margin-bottom:2px}
+.desc{font-size:13px;line-height:1.78;max-width:66ch;margin:6px 0 0}
+.unc{border-left:3px solid var(--rosa-b);background:var(--rosa);
+  padding:7px 10px;margin:8px 0;font-size:13px;border-radius:0 var(--radius) var(--radius) 0}
+.unc b{color:var(--flag)}
+.unc b{font-weight:600}
+.unc span{color:var(--muted)}
+.runbar{display:flex;gap:8px;align-items:center;font:12px/1 var(--font-data);color:var(--muted);
+  margin:10px 0 0;flex-wrap:wrap}
+.runbar button{background:none;border:1px solid var(--rule);border-radius:var(--radius);
+  padding:2px 7px;font:inherit;color:var(--muted)}
+.runbar button[aria-current="true"]{border-color:var(--accent);color:var(--accent)}
+
+/* aggregato --------------------------------------------------- */
+.bars{max-width:520px}
+.bar{display:grid;grid-template-columns:190px 1fr 42px;gap:9px;align-items:center;
+  padding:3px 0;font-size:13px}
+.bar .t{height:15px;background:var(--lilla);border-radius:2px;
+  border-right:3px solid var(--lilla-b)}
+.bar .n{font:12px/1 var(--font-data);color:var(--ink);text-align:right}
+table.cross{border-collapse:collapse;font-size:13px;margin-top:10px}
+table.cross th,table.cross td{border:1px solid var(--rule);padding:6px 10px;text-align:right;
+  font-family:var(--font-data);font-size:12px}
+table.cross th{background:var(--cielo);font-weight:600;color:var(--ink)}
+table.cross th.rh,table.cross td.rh{text-align:left;font-weight:500;color:var(--ink);
+  background:var(--panel)}
+table.cross td.z{color:#C9C6BF}
+table.cross td.hot{background:var(--menta);color:#2F6B47;font-weight:600}
+
+.dlist{margin-top:6px}
+.ditem{padding:9px 12px;font-size:13px;margin-bottom:6px;
+  background:var(--panel);border:1px solid var(--rule);border-radius:var(--radius)}
+.ditem .h{font-weight:600}
+.ditem .m{color:var(--muted)}
+.toast{
+  position:fixed;left:50%;bottom:24px;transform:translateX(-50%);
+  background:var(--ink);color:#fff;padding:9px 16px;border-radius:var(--radius);
+  font-size:13px;z-index:50;max-width:80vw;
+}
+.gear{background:none;border:1px solid var(--rule);border-radius:20px;
+  padding:3px 12px;color:var(--muted);font-size:12.5px}
+.gear:hover,.gear[aria-expanded="true"]{background:var(--pesca);border-color:var(--pesca-b);color:var(--ink)}
+.modes{display:flex;gap:0;margin-bottom:10px;border-bottom:1px solid var(--rule)}
+.modes button{background:none;border:0;border-bottom:2px solid transparent;
+  padding:4px 10px 6px;color:var(--muted);font:inherit;font-size:12px}
+.modes button[aria-current="true"]{color:var(--ink);border-bottom-color:var(--cielo-b);font-weight:600}
+.scrim{position:fixed;inset:0;background:rgba(20,20,20,.22);opacity:0;pointer-events:none;
+  transition:opacity .16s;z-index:40}
+.scrim.on{opacity:1;pointer-events:auto}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:400px;max-width:92vw;background:var(--paper);
+  border-left:1px solid var(--rule);transform:translateX(100%);transition:transform .18s ease;
+  z-index:41;display:flex;flex-direction:column}
+.drawer.on{transform:none}
+@media (prefers-reduced-motion:reduce){.drawer,.scrim{transition:none}}
+.drawer-head{display:flex;align-items:center;justify-content:space-between;
+  padding:14px 18px;background:var(--lilla)}
+.drawer-head .x{background:none;border:0;color:var(--muted);font:inherit;font-size:12px}
+.drawer-body{padding:16px 18px 40px;overflow:auto}
+.subtabs{display:flex;gap:16px;margin:2px 0 14px;border-bottom:1px solid var(--rule)}
+.subtabs button{background:none;border:0;border-bottom:2px solid transparent;padding:4px 0 7px;
+  color:var(--muted);font:inherit;font-size:13px}
+.subtabs button[aria-current="true"]{color:var(--ink);border-bottom-color:var(--lilla-b);font-weight:600}
+.mini{width:24px;height:31px;object-fit:cover;border-radius:2px;background:var(--rule);
+  flex:none;border:1px solid var(--rule);align-self:center;display:block}
+.filters{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;margin:2px 0 14px}
+.filters .fx{min-width:150px}
+table.list{width:100%;border-collapse:separate;border-spacing:0 6px;font-size:13px}
+table.list th{text-align:left;font-size:12px;color:var(--muted);font-weight:600;
+  padding:0 10px 4px;cursor:pointer;white-space:nowrap}
+table.list th:hover{color:var(--ink)}
+table.list th.up::after{content:' ▴'} table.list th.down::after{content:' ▾'}
+table.list td{background:var(--panel);border-top:1px solid var(--rule);
+  border-bottom:1px solid var(--rule);padding:7px 10px;vertical-align:middle}
+table.list td:first-child{border-left:1px solid var(--rule);
+  border-radius:var(--radius) 0 0 var(--radius)}
+table.list td:last-child{border-right:1px solid var(--rule);
+  border-radius:0 var(--radius) var(--radius) 0}
+table.list tr:hover td{background:var(--cielo)}
+table.list tr.sel td{background:var(--lilla)}
+table.list img.mini{width:28px;height:36px;margin:0 auto}
+table.list td:first-child{text-align:center}
+table.list .id{font-weight:600}
+dl.meta{display:grid;grid-template-columns:auto 1fr;gap:5px 16px;font-size:13px;margin:8px 0 0}
+dl.meta dt{color:var(--muted)}
+dl.meta dd{margin:0}
+.disclose{background:none;border:0;padding:2px 0;font:inherit;font-size:12px;color:var(--muted);
+  border-bottom:1px dotted var(--rule)}
+.disclose::before{content:'▸ '}
+.disclose[aria-expanded="true"]::before{content:'▾ '}
+.disclose:hover{color:var(--ink)}
+.lnk{background:none;border:0;padding:0;font:inherit;font-size:12px;color:var(--muted);
+  text-decoration:underline}
+.lnk:hover{color:var(--ink)}
+.cnt{font-size:12px;color:var(--muted)}
+.frase{font-size:14px;line-height:2.1;margin:6px 0 14px}
+.frase select{border:0;border-bottom:2px solid var(--lilla-b);background:var(--lilla);
+  border-radius:var(--radius) var(--radius) 0 0;padding:3px 6px;margin:0 3px;max-width:280px}
+.evid{border:1px solid var(--rule);border-radius:var(--radius);padding:9px 11px;margin-bottom:7px;
+  background:var(--panel);font-size:13px}
+.evid .q{font-style:italic}
+.evid .meta2{color:var(--muted);font-size:12px;margin-top:3px}
+.acc{border:1px solid var(--rule);border-radius:var(--radius);margin-bottom:6px;
+  background:var(--panel);overflow:hidden}
+.acc.on{border-color:var(--lilla-b)}
+.acc-h{width:100%;display:flex;align-items:center;gap:10px;background:none;border:0;
+  padding:9px 12px;font:inherit;text-align:left}
+.acc-h:hover{background:var(--cielo)}
+.acc.on .acc-h{background:var(--lilla)}
+.acc-h::before{content:'▸';color:var(--muted);font-size:11px}
+.acc-h[aria-expanded="true"]::before{content:'▾'}
+.acc-t{flex:1;font-weight:600;font-size:13px}
+.acc-n{font:12px/1 var(--font-data);color:var(--muted)}
+.acc-b{padding:2px 12px 10px}
+.ditem{padding:8px 0;font-size:13px;border-top:1px solid var(--rule);
+  background:none;border-left:0;border-right:0;border-bottom:0;border-radius:0;margin:0}
+.ditem .id{font-weight:600;font-size:12px}
+.ditem .m{color:var(--muted)}
+.sw{display:inline-block;width:13px;height:13px;border-radius:2px;border:1px solid var(--rule);
+  vertical-align:-2px;margin-right:6px}
+.col-line{font-size:12px;color:var(--muted);margin:2px 0 10px}
+.col-line b{font-family:var(--font-data);color:var(--ink);font-weight:500}
+.note a{color:inherit}
+.lang{background:none;border:0;padding:3px 8px;color:var(--muted);font-size:12px;letter-spacing:.4px}
+.lang:hover{color:var(--ink);text-decoration:underline}
+.hidden{display:none !important}
+</style>
+</head>
+<body>
+<div class="app">
+
+<header class="bar">
+  <h1>Specimen Reading Room</h1>
+  <nav class="views">
+    <button data-view="scheda" aria-current="true">Scheda</button>
+    <button data-view="corpus">Corpus</button>
+  </nav>
+  <div class="bar-tools">
+    <button class="lang" id="btnLang" title="Lingua / Language">EN</button>
+    <button class="gear" id="btnDrawer" aria-expanded="false">Impostazioni</button>
+  </div>
+</header>
+
+<div class="main">
+  <aside>
+    <div class="aside-head">
+      <div class="modes">
+        <button data-mode="upload" aria-current="true">Caricamento</button>
+        <button data-mode="notion">Notion</button>
+      </div>
+      <div id="modeUpload">
+        <div class="row">
+          <button class="btn small" id="btnFolders">Carica cartelle</button>
+          <button class="btn ghost small" id="btnCsv">Metadati</button>
+        </div>
+      </div>
+      <div id="modeNotion" class="hidden">
+        <button class="disclose" id="nCredTog" aria-expanded="false">Credenziali</button>
+        <div id="nCred" class="hidden">
+          <label class="f" id="lblTok">Token di integrazione</label>
+          <input type="password" id="nToken" placeholder="ntn_…">
+          <label class="f" style="margin-top:7px" id="lblDb">ID del database</label>
+          <input type="text" id="nDb" placeholder="ID del database">
+        </div>
+        <label class="f" style="margin-top:9px" id="lblWhere">Importa solo dove</label>
+        <div class="row" style="gap:6px">
+          <select id="nProp" style="flex:1"></select>
+          <input type="text" id="nVal" placeholder="specimen" style="flex:1">
+        </div>
+        <div class="row" style="margin-top:8px">
+          <label style="font-size:12px"><input type="checkbox" id="nImg" checked>
+          <span id="lblImg">Scarica anche le immagini</span></label>
+        </div>
+        <div class="row" style="margin-top:8px">
+          <button class="btn small" id="btnNotion">Sincronizza</button>
+        </div>
+        <p class="note" style="margin-top:8px" id="nNote">Crea i record dal database: il titolo della pagina
+        diventa l'identificativo e le immagini del campo Foto la sequenza. Gli indirizzi di Notion
+        scadono dopo un'ora, quindi le immagini vengono scaricate a ogni sessione. Richiede il
+        ponte locale <code>proxy-notion.mjs</code>.</p>
+      </div>
+      <div class="row" style="margin-top:10px;justify-content:space-between">
+        <span class="cnt" id="asideCount"></span>
+        <button class="lnk" id="btnReload">ricarica</button>
+      </div>
+      <input type="file" id="fileFolders" webkitdirectory directory multiple class="hidden">
+      <input type="file" id="fileCsv" accept=".csv,.tsv,text/csv" class="hidden">
+    </div>
+    <div class="list" id="recList"></div>
+  </aside>
+
+  <section class="pane" id="pane"></section>
+</div>
+
+<div class="scrim" id="scrim"></div>
+<div class="drawer" id="drawer" aria-hidden="true">
+  <div class="drawer-head">
+    <strong id="drawerTitle">Impostazioni</strong>
+    <button class="x" id="btnDrawerClose" aria-label="Chiudi">chiudi</button>
+  </div>
+  <div class="drawer-body" id="drawerBody"></div>
+</div>
+</div>
+
+<script>
+/* ==============================================================
+   Stato
+   ============================================================== */
+const PARAMS = [
+  {g:'copertina', k:'struttura', label:'struttura (assetto)',
+   v:['simmetrica-centrata','asimmetrica','diffusa']},
+  {g:'copertina', k:'partizione_dello_spazio', label:'partizione dello spazio',
+   v:['campo continuo','a fasce','a griglia','campiture libere']},
+  {g:'copertina', k:'disposizione_degli_elementi', label:'disposizione degli elementi',
+   v:['elemento unico','accostati','separati','sovrapposti']},
+  {g:'copertina', k:'salienza', label:'salienza',
+   v:['il carattere',"un'immagine",'un elemento grafico']},
+  {g:'copertina', k:'rapporto_testo_immagine', label:'rapporto testo / immagine',
+   v:['testo dominante','equilibrio','immagine dominante']},
+  {g:'copertina', k:'numero_di_famiglie', label:'numero di famiglie',
+   v:['una famiglia','più famiglie']},
+  {g:'copertina', k:'classificazione', label:'classificazione',
+   v:['graziato','lineare','egiziano','scritto-decorativo','non applicabile']},
+  {g:'copertina', k:'tipo_di_immagine', label:'tipo di immagine',
+   v:['assente','testo come immagine','fotografia','illustrazione','mista']},
+  {g:'copertina', k:'funzione_dell_immagine', label:"funzione dell'immagine",
+   v:['dimostrativa','ostensiva','evocativa','decorativa','non applicabile']},
+  {g:'copertina', k:'palette', label:'palette',
+   v:['bianco e nero',"bianco e nero con un colore d'accento",'primari','neutri','pastello','saturi']},
+  {g:'interno', k:'sezioni_presenti', label:'sezioni presenti', multi:true,
+   v:['copertina','set di glifi e testi dimostrativi','testi descrittivi',
+      'esempi applicativi','quarta di copertina']},
+  {g:'interno', k:'approcci_discorsivi', label:'approcci discorsivi', multi:true,
+   v:['commerciale','processuale','storico']},
+  {g:'interno', k:'esempi_applicativi_forma', label:'esempi applicativi — forma',
+   v:['assenti','solo tipografici','applicazioni','immagine sostitutiva']},
+  {g:'interno', k:'esempi_applicativi_referente', label:'esempi applicativi — referente',
+   v:['reale','immaginato','misto','non applicabile']},
+  {g:'interno', k:'esempi_applicativi_collocazione', label:'esempi applicativi — collocazione',
+   v:['nelle pagine','set di ephemera','non applicabile']}
+];
+
+const META = [
+  {k:'anno',                  l:'anno',                  multi:false},
+  {k:'nazione',               l:'nazione',               multi:true},
+  {k:'Fonderia',              l:'fonderia',              multi:true},
+  {k:'Distributore',          l:'distributore',          multi:true},
+  {k:'Progetto grafico',      l:'progetto grafico',      multi:true},
+  {k:'Archivio',              l:'archivio',              multi:true},
+  {k:'Tipologia',             l:'tipologia',             multi:true},
+  {k:'Rilegatura',            l:'rilegatura',            multi:true},
+  {k:'Tecnologia',            l:'tecnologia',            multi:true},
+  {k:'lingue',                l:'lingue',                multi:true},
+  {k:'colori',                l:'numero di colori',      multi:true},
+  {k:'Dimensioni da chiuso',  l:'dimensioni da chiuso',  multi:false},
+  {k:'Esempi applicativi',    l:'esempi applicativi (scheda)', multi:false},
+  {k:'Descrizione carattere', l:'descrizione carattere (scheda)', multi:false}
+];
+const metaDef = k => META.find(m=>m.k===k);
+
+/* ==============================================================
+   Lingua dell'interfaccia (IT / EN).
+   I valori registrati restano sempre in italiano: si traduce solo
+   ciò che si vede, così dati e analisi restano compatibili.
+   Termini inglesi dal glossario del 24 novembre 2026.
+   ============================================================== */
+let LANG = (()=>{ try{ return localStorage.getItem('srr:lang')||'it' }catch(e){ return 'it' } })();
+const L = (it,en) => LANG==='en' ? en : it;
+const PARAM_EN = {
+  struttura:'layout structure', partizione_dello_spazio:'division of space',
+  disposizione_degli_elementi:'arrangement of elements', salienza:'salience',
+  rapporto_testo_immagine:'text–image relation', numero_di_famiglie:'number of type families',
+  classificazione:'classification', tipo_di_immagine:'image type', funzione_dell_immagine:'image function',
+  palette:'palette', sezioni_presenti:'sections shown', approcci_discorsivi:'discursive approaches',
+  esempi_applicativi_forma:'application examples — form',
+  esempi_applicativi_referente:'application examples — referent',
+  esempi_applicativi_collocazione:'application examples — placement'
+};
+const VOC_EN = {
+  'simmetrica-centrata':'symmetrical-centred', 'asimmetrica':'asymmetrical', 'diffusa':'spread',
+  'campo continuo':'continuous field', 'a fasce':'striped', 'a griglia':'gridded', 'campiture libere':'free colour fields',
+  'elemento unico':'single element', 'accostati':'adjacent', 'separati':'separate', 'sovrapposti':'overlapping',
+  'il carattere':'the typeface', "un'immagine":'an image', 'un elemento grafico':'a graphic element',
+  'testo dominante':'text predominant', 'equilibrio':'balanced', 'immagine dominante':'image predominant',
+  'una famiglia':'one family', 'più famiglie':'several families',
+  'graziato':'serif', 'lineare':'sans serif', 'egiziano':'slab serif', 'scritto-decorativo':'script/decorative',
+  'non applicabile':'not applicable',
+  'assente':'none', 'testo come immagine':'text as image', 'fotografia':'photograph', 'illustrazione':'illustration', 'mista':'mixed',
+  'dimostrativa':'demonstrative', 'ostensiva':'ostensive', 'evocativa':'evocative', 'decorativa':'decorative',
+  'bianco e nero':'black and white', "bianco e nero con un colore d'accento":'black and white with one accent colour',
+  'primari':'primary colours', 'neutri':'neutral', 'pastello':'pastel', 'saturi':'saturated',
+  'copertina':'cover', 'set di glifi e testi dimostrativi':'glyph sets and showings', 'testi descrittivi':'descriptive texts',
+  'esempi applicativi':'application examples', 'quarta di copertina':'back cover',
+  'commerciale':'commercial', 'processuale':'process-based', 'storico':'historical',
+  'assenti':'none', 'solo tipografici':'typographic only', 'applicazioni':'applications', 'immagine sostitutiva':'substitute image',
+  'reale':'real', 'immaginato':'fictional', 'misto':'mixed',
+  'nelle pagine':'within the pages', 'set di ephemera':'ephemera set',
+  'interno':'inside pages'
+};
+const META_EN = {
+  'anno':'year', 'nazione':'country', 'Fonderia':'foundry', 'Distributore':'distributor',
+  'Progetto grafico':'graphic design', 'Archivio':'archive', 'Tipologia':'object type', 'Rilegatura':'binding',
+  'Tecnologia':'technology', 'lingue':'languages', 'colori':'number of colours',
+  'Dimensioni da chiuso':'closed size', 'Esempi applicativi':'application examples (record)',
+  'Descrizione carattere':'typeface description (record)'
+};
+const EVID_EN = {fonderia:'foundry', distributore:'distributor', provenienza:'provenance', luogo:'place',
+  indirizzo:'address', data:'date', lingua:'language', 'sigla di catalogo':'catalogue code',
+  progettista:'designer', stampatore:'printer', altro:'other'};
+const COL_EN = {'chiaro neutro':'light neutral','scuro neutro':'dark neutral','grigio':'grey','rosso':'red',
+  'arancione':'orange','giallo':'yellow','verde':'green','turchese':'turquoise','blu':'blue','viola':'violet',
+  'magenta':'magenta','rosa':'pink','nessuno':'none'};
+const tv = v => (LANG==='en' && v!=null && VOC_EN[v]) || v;          // valore del vocabolario
+const tcol = v => (LANG==='en' && COL_EN[v]) || v;                   // famiglia cromatica
+const plabel = p => LANG==='en' ? (PARAM_EN[p.k]||p.label) : p.label;
+const mlabel = k => { const d=metaDef(k); return d ? (LANG==='en' ? (META_EN[k]||d.l) : d.l) : k };
+/* il modello indica il parametro come "copertina.classificazione" o "tipo_di_immagine":
+   lo riconduco all'etichetta leggibile */
+function paramName(raw){
+  const k=String(raw||'').trim().replace(/^(copertina|interno)[.:\s]+/i,'');
+  const p=PARAMS.find(x=>x.k===k || x.label===k || x.k===k.replace(/[\s'’]+/g,'_') || x.label.indexOf(k)===0);
+  return p ? plabel(p) : raw;
+}
+
+const SYSTEM_PROMPT = `Sei un assistente per la catalogazione analitica di specimen tipografici storici.
+Ricevi le fotografie di un singolo artefatto e compili una griglia di osservazione a vocabolario chiuso.
+
+INPUT
+Le immagini sono in sequenza. La prima è la copertina. Le successive sono le pagine interne e, quando presenti, gli stampati allegati fotografati a parte. Alcuni scatti possono essere ruotati, ripetere la stessa pagina, o inquadrare materiale che non appartiene all'artefatto (altri stampati sottostanti, nastro di conservazione, etichette d'archivio, cartellini con segnature). Ignora tutto ciò che non fa parte dell'artefatto.
+
+La documentazione fotografica è spesso PARZIALE: molte pagine interne possono non essere state fotografate. Rileva i campi dell'interno solo su ciò che vedi. Non inferire la struttura complessiva dell'artefatto, non affermare che una pagina è la quarta di copertina se non è dichiarato, non dedurre l'assenza di una sezione dal fatto che non compare negli scatti disponibili.
+
+REGOLE GENERALI
+Rileva solo ciò che è visibile nelle immagini. Non usare conoscenze pregresse sul carattere, sulla fonderia o sul progettista: se un'informazione non è visibile, non va dedotta.
+Scegli sempre un valore fra quelli ammessi. Non inventare valori nuovi, non restituire più valori dove ne è previsto uno solo.
+Descrivi, non interpretare. Non attribuire intenzioni, significati culturali o giudizi di valore.
+
+--- COPERTINA ---
+
+struttura
+  simmetrica-centrata / asimmetrica / diffusa
+  Riguarda la disposizione degli elementi NELLA PAGINA, non la simmetria interna del singolo elemento. Un blocco internamente simmetrico ma collocato in alto in un campo per il resto vuoto è "asimmetrica". "diffusa" quando manca un asse dominante e gli elementi occupano l'intero campo.
+
+partizione dello spazio
+  campo continuo / a fasce / a griglia / campiture libere
+  Registra SOLO le divisioni della superficie: fondi, tagli, campiture piene di colore. NON considerare le forme che si appoggiano sopra il fondo. Una copertina occupata da un grande elemento che la divide visivamente, ma priva di partizioni del fondo, è "campo continuo".
+  "a fasce" vale sia per bande ORIZZONTALI sia VERTICALI: una copertina divisa in due campi di colore pieno affiancati lungo una linea verticale è "a fasce", non "campiture libere". Usa "campiture libere" solo quando le zone di colore hanno contorni irregolari o non allineati ai bordi.
+
+disposizione degli elementi
+  elemento unico / accostati / separati / sovrapposti
+  Come gli elementi stanno gli uni rispetto agli altri.
+  "elemento unico": in copertina compare UN SOLO elemento, senza titolo, marchio o righe di testo autonome. Il testo che compone l'elemento stesso non conta come elemento a sé.
+  "accostati": gli elementi si toccano lungo i bordi.
+  "separati": più elementi distinti che non si toccano né si sovrappongono, indipendentemente da quanto spazio li divida.
+  "sovrapposti": gli elementi si intersecano.
+
+salienza
+  il carattere / un'immagine / un elemento grafico
+  Cosa cattura per primo lo sguardo. REGOLA: se ciò che si vede per primo è composto con i glifi del carattere promosso, il valore è "il carattere", anche quando la composizione non è leggibile come parola e funziona come figura. "un elemento grafico" vale per ciò che non è né carattere né immagine: filetti, campiture, marchi, forme geometriche.
+
+rapporto testo / immagine
+  testo dominante / equilibrio / immagine dominante
+
+numero di famiglie presentate
+  una famiglia / più famiglie
+  "una famiglia" anche quando il carattere è declinato in molti tagli o pesi. "più famiglie" quando l'artefatto presenta caratteri diversi e indipendenti. Non considerare gli annunci di altri prodotti in quarta di copertina.
+
+classificazione
+  graziato / lineare / egiziano / scritto-decorativo / non applicabile
+  Macro-categoria del carattere in copertina, di norma il carattere promosso.
+
+tipo di immagine
+  assente / testo come immagine / fotografia / illustrazione / mista
+  "testo come immagine" si applica in due casi: quando la composizione tipografica forma una figura o un campo riconoscibile indipendentemente dalla lettura; e quando UNA SOLA LETTERA o segno del carattere promosso è ingrandito fino a funzionare come forma dominante della pagina. Non si applica alla semplice impaginazione studiata del titolo.
+  "illustrazione" comprende anche il disegno geometrico o non figurativo.
+
+funzione dell'immagine
+  dimostrativa / ostensiva / evocativa / decorativa / non applicabile
+  Il criterio è come il carattere compare nell'immagine, o se non vi compare.
+  dimostrativa: mostra il carattere in uso, applicato a un supporto o a un contesto (un manifesto affisso, un imballaggio, una pagina composta).
+  ostensiva: esibisce la realtà materiale della tipografia — caratteri mobili, matrici, macchine — mostrando il prodotto anziché il suo impiego. Vale sia quando questi sono fotografati come soggetto, sia quando sono usati come materiale di una composizione: un fregio, una raggiera o un motivo costruito con blocchetti di piombo è ostensivo, non decorativo.
+  evocativa: non mostra il carattere; costruisce per associazione un'atmosfera o un riferimento culturale, geografico, storico.
+  decorativa: VALORE RESIDUALE. Usalo solo dopo aver escluso le altre tre, per fregi, cornici e ornamenti generici. Non si applica MAI a forme costruite con materiale tipografico né a forme che coincidono con lettere o segni del carattere promosso: quel caso è "testo come immagine" nel tipo, e la funzione diventa "non applicabile" per dipendenza.
+
+palette
+  bianco e nero / bianco e nero con un colore d'accento / primari / neutri / pastello / saturi
+  PROCEDI IN DUE PASSAGGI, in quest'ordine.
+  Primo: conta i colori presenti in copertina, escludendo il bianco o l'avorio della carta e il nero del testo. Non contare come colore il grigio prodotto da una retinatura del nero, né i riflessi o le dominanti della fotografia.
+  Secondo: scegli il valore in base al conteggio. Zero colori: "bianco e nero". UN SOLO colore, e soltanto in questo caso: "bianco e nero con un colore d'accento". DUE O PIÙ colori: scegli fra "primari", "saturi", "pastello" e "neutri" secondo il loro carattere — primari se sono rosso, giallo e blu elementari; saturi se sono pieni e squillanti; pastello se sono chiari e desaturati; neutri se sono terrosi, grigi o spenti.
+  Il valore "bianco e nero con un colore d'accento" è quindi ESCLUSO ogni volta che i colori sono più di uno, anche quando occupano poca superficie e anche quando il bianco e il nero restano dominanti. Una copertina con nero, verde e arancione ha due colori, non un accento.
+  Attenzione: le fotografie sono scatti d'archivio con illuminazione variabile. Superfici nere lucide possono apparire brunite o metalliche: non registrarle come colore.
+
+--- INTERNO ---
+
+sezioni presenti (zero o più valori)
+  copertina / set di glifi e testi dimostrativi / testi descrittivi / esempi applicativi / quarta di copertina
+  Registra quali delle cinque sezioni compaiono nell'artefatto. È il solo dato della matrice funzionale che si rileva per osservazione diretta.
+  copertina: la soglia di presentazione, con il nome del carattere o della fonderia.
+  set di glifi e testi dimostrativi: alfabeti, serie di corpi crescenti, frasi campione, parole isolate composte per mostrare il disegno del carattere senza simularne un impiego.
+  testi descrittivi: prosa che parla del carattere, ne qualifica le forme, ne dichiara la genealogia o ne suggerisce gli usi.
+  esempi applicativi: composizioni che inscenano un contesto d'uso, come etichette, inviti, carte intestate, annunci.
+  quarta di copertina: l'ultima facciata, quando è distinguibile e reca un contenuto proprio, per esempio il marchio della fonderia, il colophon o un annuncio.
+  Segnala SOLTANTO le sezioni che vedi nelle immagini fornite. La documentazione fotografica è spesso parziale: se una sezione non compare negli scatti, non elencarla, ma non dedurne che sia assente dall'artefatto. Se nessuna sezione è riconoscibile, restituisci un array vuoto.
+
+approcci discorsivi (zero o più valori)
+  commerciale / processuale / storico
+  commerciale: richiede la presenza EFFETTIVA e visibile di dati di listino — corpi, pesi in chilogrammi, prezzi, numeri di catalogo, sigle di serie. Se questi dati non compaiono, il valore NON si applica: la finalità promozionale dell'artefatto non è di per sé un approccio commerciale.
+  processuale: documentazione del lavoro progettuale — schizzi preparatori, studi di proporzione, prove di composizione, alfabeti incollati.
+  storico: testi che collocano il carattere in una genealogia, ne dichiarano i modelli o i precedenti.
+  Se nessuno dei tre è presente, restituisci un array vuoto.
+
+esempi applicativi — forma
+  assenti / solo tipografici / applicazioni / immagine sostitutiva
+  DISTINZIONE FONDAMENTALE: gli esempi applicativi inscenano un contesto d'uso (un'etichetta, un invito, una carta intestata, un annuncio). I testi dimostrativi mostrano il disegno del carattere senza simularne un impiego (alfabeti, righe di corpi crescenti, frasi campione, parole isolate). Un artefatto le cui pagine interne contengono solo alfabeti e frasi campione ha esempi applicativi "assenti".
+  PROCEDI IN DUE PASSAGGI, in quest'ordine.
+  Primo: stabilisci se esistono esempi applicativi. Se non ce ne sono, il valore è "assenti" e ti fermi qui.
+  Secondo: guarda TUTTI gli esempi applicativi presenti nell'artefatto e chiediti se almeno uno contenga un'immagine, cioè una fotografia, un'illustrazione, un disegno, un marchio figurato o una campitura che raffiguri qualcosa. Le lettere, i numeri, i filetti, le cornici e i fregi tipografici NON sono immagini.
+    Se NESSUN esempio contiene immagini -> "solo tipografici".
+    Se ANCHE UNO SOLO degli esempi contiene un'immagine -> "applicazioni", indipendentemente da quanti altri ne siano privi e da quanto l'immagine sia piccola.
+    Se al posto degli esempi compare un'immagine evocativa che non mostra alcuna applicazione -> "immagine sostitutiva".
+  Il valore "solo tipografici" descrive dunque un insieme di esempi interamente composti con caratteri e materiale tipografico: basta una fotografia in una sola delle applicazioni perché non si applichi più.
+
+esempi applicativi — referente
+  reale / immaginato / misto / non applicabile
+  Il criterio è che cosa l'applicazione dichiara di sé, non ciò che sai del mondo. Registra come REALE il referente accompagnato da appigli verificabili: un indirizzo, una sede, una data, un ente organizzatore, una ragione sociale completa. Registra come IMMAGINATO il nome isolato, privo di appigli. Se entrambi i tipi compaiono nello stesso artefatto, il valore è MISTO.
+
+esempi applicativi — collocazione
+  nelle pagine / set di ephemera / non applicabile
+  "set di ephemera": stampati autonomi raccolti a parte, fotografati sciolti.
+
+--- INTERO ARTEFATTO ---
+
+soggetto o tema dominante
+  Una frase breve, o stringa vuota se non definibile.
+
+parole chiave
+  Estratte ESCLUSIVAMENTE dai testi descrittivi, cioè dai testi in prosa che parlano DEL CARATTERE: ne qualificano le forme, ne dichiarano la genealogia, ne suggeriscono gli impieghi, ne raccontano la progettazione.
+  NON sono testi descrittivi, e non vanno usati: le frasi campione e i brani letterari o filosofici composti per mostrare il carattere in pagina, anche quando sono in prosa continua e portano una firma d'autore; i testi delle applicazioni; i colophon; gli indirizzi. Il criterio è il SOGGETTO del testo, non la sua forma: un brano di Lao-tse o un saggio sull'educazione composti nel carattere sono testi dimostrativi, non descrittivi.
+  Se l'artefatto non ha testi descrittivi, restituisci un array vuoto.
+  MASSIMO CINQUE, nessun minimo. Devono essere TERMINI SINGOLI: aggettivi o sostantivi. Un sintagma è ammesso solo se il significato si perde separandolo, e comunque entro tre parole.
+  Per ciascuna: il termine nella lingua originale e la resa italiana.
+
+--- DIPENDENZE OBBLIGATORIE ---
+Se numero di famiglie = "più famiglie" → classificazione = "non applicabile".
+Se tipo di immagine = "assente" oppure "testo come immagine" → funzione dell'immagine = "non applicabile" E rapporto testo / immagine = "testo dominante".
+Se forma degli esempi applicativi = "assenti" → referente = "non applicabile" E collocazione = "non applicabile".
+
+--- DESCRIZIONE ---
+Un paragrafo di 4-6 frasi che descrive la copertina e l'interno. Deve essere coerente con i valori appena rilevati e non contraddirli. Ammette solo affermazioni verificabili guardando le immagini: cosa c'è, dove sta, com'è composto, cosa mostrano gli esempi, cosa dicono i testi. NON deve contenere interpretazioni del significato culturale, giudizi estetici, ipotesi sulle intenzioni della fonderia o sul contesto storico. Non descrivere parti dell'artefatto che non compaiono negli scatti.
+
+--- INCERTEZZE ---
+Elenca solo i parametri per i quali un secondo valore sarebbe stato quasi altrettanto difendibile, indicando quale e perché in una riga. Se non ce ne sono, array vuoto. Non elencare parametri risolti con sicurezza.`;
+
+const EVID_PROMPT = `Sei un assistente per la catalogazione di specimen tipografici storici.
+Ricevi le fotografie di un artefatto e ne estrai le EVIDENZE TESTUALI utili alla schedatura.
+
+REGOLA FONDAMENTALE: trascrivi, non dedurre. Riporta soltanto ciò che è materialmente
+scritto o stampato sull'artefatto. Non ricavare informazioni dalla tua conoscenza del
+carattere, della fonderia o del periodo: se un dato non compare nelle immagini, non esiste.
+Esempi di ciò che NON va fatto: dedurre il paese dal nome della fonderia; datare l'artefatto
+dallo stile; attribuire un progettista non nominato; indicare una rilegatura che le
+fotografie non mostrano.
+
+Per ogni evidenza riporta:
+- testo: la trascrizione esatta, comprese abbreviazioni e punteggiatura, senza correzioni.
+- tipo: che genere di informazione è.
+- immagine: il numero dello scatto in cui compare, contando da 1.
+- campo_suggerito: la proprietà di catalogo cui il dato potrebbe riferirsi, oppure "—".
+- valore_suggerito: il valore normalizzato da proporre per quel campo, oppure stringa vuota.
+
+Cerca in tutte le immagini, non solo in copertina: colophon, crediti, timbri, sovrastampe,
+indirizzi e sigle di catalogo compaiono quasi sempre in quarta o in fondo.
+
+Distingui con cura la marca del DISTRIBUTORE, che indica commercio e circolazione, dal timbro
+di PROVENIENZA archivistica, che indica soltanto dove l'esemplare è conservato oggi. Quando
+non è chiaro quale dei due sia, dichiaralo nel campo tipo scegliendo "provenienza".
+
+Non riportare: le frasi campione, i testi dimostrativi, i testi degli esempi applicativi.
+Riporta al massimo dodici evidenze; se non ne trovi, restituisci un array vuoto.`;
+
+function evidSchema(){
+  return {type:'object',properties:{evidenze:{type:'array',items:{type:'object',properties:{
+    testo:{type:'string'},
+    tipo:{type:'string',enum:['fonderia','distributore','provenienza','luogo','indirizzo',
+      'data','lingua','sigla di catalogo','progettista','stampatore','altro']},
+    immagine:{type:'integer'},
+    campo_suggerito:{type:'string',enum:[...META.map(m=>m.k),'—']},
+    valore_suggerito:{type:'string'}
+  },required:['testo','tipo','immagine','campo_suggerito','valore_suggerito'],
+    propertyOrdering:['testo','tipo','immagine','campo_suggerito','valore_suggerito']}}},
+    required:['evidenze'],propertyOrdering:['evidenze']};
+}
+
+function schema(){
+  const s = (arr)=>({type:'string',enum:arr});
+  const cop={},copReq=[],int={},intReq=[];
+  PARAMS.forEach(p=>{
+    const t = p.multi ? {type:'array',items:s(p.v)} : s(p.v);
+    if(p.g==='copertina'){cop[p.k]=t;copReq.push(p.k)} else {int[p.k]=t;intReq.push(p.k)}
+  });
+  return {
+    type:'object',
+    properties:{
+      copertina:{type:'object',properties:cop,required:copReq,propertyOrdering:copReq},
+      interno:{type:'object',properties:int,required:intReq,propertyOrdering:intReq},
+      artefatto:{type:'object',properties:{
+        tema_dominante:{type:'string'},
+        parole_chiave:{type:'array',items:{type:'object',
+          properties:{originale:{type:'string'},italiano:{type:'string'}},
+          required:['originale','italiano'],propertyOrdering:['originale','italiano']}}
+      },required:['tema_dominante','parole_chiave'],propertyOrdering:['tema_dominante','parole_chiave']},
+      descrizione:{type:'string'},
+      incertezze:{type:'array',items:{type:'object',
+        properties:{parametro:{type:'string'},valore_alternativo:{type:'string'},motivo:{type:'string'}},
+        required:['parametro','valore_alternativo','motivo'],
+        propertyOrdering:['parametro','valore_alternativo','motivo']}}
+    },
+    required:['copertina','interno','artefatto','descrizione','incertezze'],
+    propertyOrdering:['copertina','interno','artefatto','descrizione','incertezze']
+  };
+}
+
+const state = {
+  records: [],      // {id, files:[File], urls:[], cover:0, meta:{}, runs:[], manual:null, revealed:false}
+  metaCols: META.map(m=>m.k),
+  selected: null,
+  view: 'scheda',
+  ingest: 'upload',
+  insSub: 'elenco',
+  schSub: 'analisi',
+  filtro: {q:'',k:'',v:''},
+  aperti: {},
+  cfg: {key:'', model:'gemini-3.8-flash', noThinking:true, maxTokens:8192,
+        notionToken:'', notionDb:''}
+};
+
+/* storage: solo configurazione e risultati, mai le immagini ------ */
+const store = {
+  get(k,d){ try{const v=localStorage.getItem('srr:'+k);return v?JSON.parse(v):d}catch(e){return d} },
+  set(k,v){ try{localStorage.setItem('srr:'+k,JSON.stringify(v))}catch(e){
+    if(!store._warned){ store._warned=true; setTimeout(()=>toast(L('Spazio del browser esaurito: i risultati non vengono più salvati. Esporta il JSON da Impostazioni.','Browser storage is full: results are no longer saved. Export the JSON from Settings.')),0) } } }
+};
+state.cfg = Object.assign(state.cfg, store.get('cfg',{}));
+const savedResults = store.get('results',{});
+
+function persist(){
+  const out={};
+  state.records.forEach(r=>{
+    if(r.runs.length||r.manual||r.evidenze) out[r.id]={runs:r.runs,manual:r.manual,corretta:r.corretta,evidenze:r.evidenze,colore:r.colore,
+      meta:r.meta,revealed:r.revealed,cover:r.cover};
+  });
+  store.set('results',out);
+}
+
+/* ==============================================================
+   Ingresso
+   ============================================================== */
+document.getElementById('btnFolders').onclick=()=>document.getElementById('fileFolders').click();
+document.getElementById('btnCsv').onclick=()=>document.getElementById('fileCsv').click();
+
+document.getElementById('fileFolders').onchange = (e)=>{
+  const all=[...e.target.files].filter(f=>!/(^|\/)\._|\.DS_Store$/.test(f.webkitRelativePath||f.name));
+  const rx=/\.(jpe?g|png|webp|gif|bmp|tiff?|avif|heic|heif)$/i;
+  const files=all.filter(f=>rx.test(f.name));
+  const skipped=all.filter(f=>!rx.test(f.name));
+  if(!files.length){
+    toast(L('Nessuna immagine trovata. Formati visti: ','No images found. Formats seen: ')+
+      [...new Set(all.map(f=>(f.name.split('.').pop()||'?').toLowerCase()))].join(', '));
+    return;
+  }
+  const groups={};
+  files.forEach(f=>{
+    const path=(f.webkitRelativePath||f.name).split('/');
+    const id = path.length>1 ? path[path.length-2] : 'senza cartella';
+    (groups[id]=groups[id]||[]).push(f);
+  });
+  Object.keys(groups).sort(natural).forEach(id=>{
+    const fs=groups[id].sort((a,b)=>natural(a.name,b.name));
+    let rec=state.records.find(r=>r.id===id);
+    if(rec){ rec.files=fs; rec.urls.forEach(URL.revokeObjectURL); }
+    else { rec={id,files:fs,urls:[],cover:0,meta:{},runs:[],manual:null,corretta:null,revealed:false};
+           state.records.push(rec) }
+    rec.urls=fs.map(f=>URL.createObjectURL(f));
+    const saved=savedResults[id];
+    if(saved){rec.runs=saved.runs||[];rec.manual=saved.manual||null;
+              rec.corretta=saved.corretta||null; rec.evidenze=saved.evidenze||null;
+              rec.colore=saved.colore||null;
+              if(saved.meta) rec.meta=Object.assign({},saved.meta,rec.meta);
+              rec.revealed=!!saved.revealed;rec.cover=saved.cover||0}
+  });
+  state.records.sort((a,b)=>natural(a.id,b.id));
+  if(!state.selected) state.selected=state.records[0].id;
+  render();
+  let msg=state.records.length+L(' record nel corpus, ',' records in the corpus, ')+files.length+L(' immagini.',' images.');
+  if(skipped.length){
+    const ext=[...new Set(skipped.map(f=>(f.name.split('.').pop()||'?').toLowerCase()))];
+    msg+=L(' Saltati ',' Skipped ')+skipped.length+L(' file (',' files (')+ext.join(', ')+').';
+  }
+  const soli=Object.keys(groups).length;
+  if(soli<2) msg+=L(' Se ti aspettavi più record, seleziona la cartella che contiene le '+
+    'sottocartelle, non una singola cartella.',' If you expected more records, select the folder that '+
+    'contains the subfolders, not a single folder.');
+  toast(msg);
+};
+
+document.getElementById('fileCsv').onchange = (e)=>{
+  const f=e.target.files[0]; if(!f) return;
+  const rd=new FileReader();
+  rd.onload=()=>{
+    const rows=parseTable(rd.result);
+    if(rows.length<2){toast(L('La tabella sembra vuota.','The table seems empty.'));return}
+    const cols=rows[0];
+    state.metaCols=cols.slice(1);
+    let hit=0;
+    rows.slice(1).forEach(r=>{
+      const id=(r[0]||'').trim(); if(!id) return;
+      const rec=state.records.find(x=>x.id===id);
+      if(!rec) return;
+      hit++;
+      cols.forEach((c,i)=>{ if(i>0) rec.meta[c]=(r[i]||'').trim() });
+    });
+    render();
+    toast(hit+L(' record agganciati ai metadati. La prima colonna deve contenere il nome della cartella.',
+      ' records linked to metadata. The first column must contain the folder name.'));
+  };
+  rd.readAsText(f);
+};
+
+function parseTable(txt){
+  const sep = txt.split('\n')[0].split('\t').length > txt.split('\n')[0].split(',').length ? '\t' : ',';
+  const out=[];let row=[],cell='',q=false;
+  for(let i=0;i<txt.length;i++){
+    const c=txt[i];
+    if(q){ if(c==='"'){ if(txt[i+1]==='"'){cell+='"';i++} else q=false } else cell+=c }
+    else if(c==='"') q=true;
+    else if(c===sep){row.push(cell);cell=''}
+    else if(c==='\n'){row.push(cell);out.push(row);row=[];cell=''}
+    else if(c!=='\r') cell+=c;
+  }
+  if(cell||row.length){row.push(cell);out.push(row)}
+  return out.filter(r=>r.some(c=>c.trim()));
+}
+
+function natural(a,b){return String(a).localeCompare(String(b),'it',{numeric:true})}
+
+/* ==============================================================
+   Chiamata al modello
+   ============================================================== */
+const MIME_EXT={jpg:'image/jpeg',jpeg:'image/jpeg',png:'image/png',webp:'image/webp',
+  gif:'image/gif',bmp:'image/bmp',tif:'image/tiff',tiff:'image/tiff',avif:'image/avif',
+  heic:'image/heic',heif:'image/heif'};
+function mimeOf(f){ return f.type || MIME_EXT[(f.name.split('.').pop()||'').toLowerCase()] || 'image/jpeg' }
+/* Il modello riduce comunque le immagini (lato lungo max 3072 px): le ridimensiono qui a
+   2048 px per non superare il limite di dimensione della richiesta con molti scatti.
+   Se il browser non sa decodificare il file (es. HEIC fuori da Safari) lo invio intatto. */
+async function prepareImage(f){
+  const MAX=2048;
+  try{
+    const url=URL.createObjectURL(f);
+    const img=await new Promise((res,rej)=>{const im=new Image();im.onload=()=>res(im);im.onerror=rej;im.src=url});
+    URL.revokeObjectURL(url);
+    const k=Math.min(1, MAX/Math.max(img.naturalWidth,img.naturalHeight));
+    if(k===1 && /jpeg|png|webp/.test(mimeOf(f)) && f.size<4e6)
+      return {mime:mimeOf(f), data:await fileToBase64(f)};
+    const cv=document.createElement('canvas');
+    cv.width=Math.round(img.naturalWidth*k); cv.height=Math.round(img.naturalHeight*k);
+    const cx=cv.getContext('2d'); cx.fillStyle='#fff'; cx.fillRect(0,0,cv.width,cv.height);
+    cx.drawImage(img,0,0,cv.width,cv.height);
+    return {mime:'image/jpeg', data:cv.toDataURL('image/jpeg',0.9).split(',')[1]};
+  }catch(e){
+    return {mime:mimeOf(f), data:await fileToBase64(f)};
+  }
+}
+function fileToBase64(f){
+  return new Promise((res,rej)=>{
+    const r=new FileReader();
+    r.onload=()=>res(String(r.result).split(',')[1]);
+    r.onerror=()=>rej(new Error(L('Immagine non leggibile: ','Unreadable image: ')+f.name));
+    r.readAsDataURL(f);
+  });
+}
+
+async function analyse(rec,modo){
+  if(!state.cfg.key) throw new Error(L('Manca la chiave API. Inseriscila in Impostazioni.','API key missing. Enter it in Settings.'));
+  const evid = modo==='evidenze';
+  const ordered=[rec.files[rec.cover],...rec.files.filter((_,i)=>i!==rec.cover)];
+  const parts=[{text:(evid
+    ? 'Estrai le evidenze testuali da questo specimen. '
+    : 'Analizza questo specimen. ')+ordered.length+
+    ' immagini in ordine: la prima è la copertina.'}];
+  for(const f of ordered){
+    const im=await prepareImage(f);
+    parts.push({inline_data:{mime_type:im.mime,data:im.data}});
+  }
+  const gen={temperature:0,maxOutputTokens:state.cfg.maxTokens,
+    responseMimeType:'application/json',responseSchema: evid?evidSchema():schema()};
+  if(state.cfg.noThinking){ const tc=thinkingFor(state.cfg.model); if(tc) gen.thinkingConfig=tc; }
+  const url='https://generativelanguage.googleapis.com/v1beta/models/'+
+    encodeURIComponent(state.cfg.model)+':generateContent';
+  const res=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':state.cfg.key},
+    body:JSON.stringify({systemInstruction:{parts:[{text: evid?EVID_PROMPT:SYSTEM_PROMPT}]},
+      contents:[{role:'user',parts}],generationConfig:gen})});
+  const data=await res.json();
+  if(!res.ok){
+    const m=(data && data.error && data.error.message) || ('HTTP '+res.status);
+    throw new Error(m);
+  }
+  const cand=data.candidates && data.candidates[0];
+  if(!cand) throw new Error(L('Il modello non ha restituito risposte.','The model returned no answer.'));
+  if(cand.finishReason && cand.finishReason!=='STOP')
+    throw new Error(L('Risposta interrotta (','Response cut off (')+cand.finishReason+L('). Alza il limite di token in Impostazioni.','). Raise the token limit in Settings.'));
+  const txt=(cand.content.parts||[]).filter(p=>!p.thought).map(p=>p.text||'').join('');
+  let out;
+  try{ out=JSON.parse(txt) }catch(e){ throw new Error(L('Risposta non leggibile come JSON.','Response is not readable JSON.')) }
+  out._at=new Date().toISOString();
+  out._model=data.modelVersion||state.cfg.model;
+  out._richiesto=state.cfg.model;
+  return out;
+}
+
+/* Gemini 2.5 Flash / Flash-Lite: il ragionamento si spegne con thinkingBudget 0.
+   Gemini 2.5 Pro: non si può spegnere, quindi non invio nulla.
+   Gemini 3 e successivi: non si spegne del tutto; thinkingBudget è solo compatibilità
+   e sui Pro dà errore, quindi uso thinkingLevel "low", supportato da tutti. */
+function thinkingFor(model){
+  const m=String(model||'').toLowerCase();
+  if(/^gemini-(1\.|2\.0|2\.5)/.test(m)) return /pro/.test(m) ? null : {thinkingBudget:0};
+  return {thinkingLevel:'low'};
+}
+
+let batchAttivo=false;
+async function runBatch(n){
+  const coda=state.records.filter(r=>!r.runs.length).slice(0,n);
+  if(!coda.length){ toast(L('Tutti i record sono già stati analizzati.','All records have already been analysed.')); return }
+  batchAttivo=true;
+  const b=document.getElementById('btnBatch'), stop=document.getElementById('btnStop');
+  if(stop){ stop.classList.remove('hidden'); stop.onclick=()=>{batchAttivo=false;
+    toast(L('Interrompo dopo il record in corso.','Stopping after the current record.'))} }
+  if(b) b.disabled=true;
+  let fatti=0, falliti=0;
+  for(const rec of coda){
+    if(!batchAttivo) break;
+    if(b) b.textContent=L('Analisi ','Analysis ')+(fatti+falliti+1)+L(' di ',' of ')+coda.length+' · '+rec.id;
+    try{
+      const out=await analyse(rec);
+      rec.runs.push(out); rec.revealed=true; fatti++;
+      try{ rec.colore=await misuraColore(rec) }catch(e){}
+    }catch(e){
+      falliti++;
+      if(/quota|rate|429|RESOURCE/i.test(e.message)){
+        toast(L('Limite di richieste raggiunto: attendo venti secondi…','Request limit reached: waiting twenty seconds…'));
+        await new Promise(r=>setTimeout(r,20000));
+      } else if(falliti>2){ toast(L('Troppi errori: ','Too many errors: ')+e.message); break }
+    }
+    persist();
+    await new Promise(r=>setTimeout(r,900));
+  }
+  batchAttivo=false;
+  if(b){ b.disabled=false; b.textContent=L('Analizza i non analizzati','Analyse the unanalysed') }
+  if(stop) stop.classList.add('hidden');
+  render();
+  toast(fatti+L(' analizzati',' analysed')+(falliti?', '+falliti+L(' falliti',' failed'):'')+'.');
+}
+
+async function runOne(rec,btn){
+  if(btn){btn.disabled=true;btn.textContent=L('Analisi in corso…','Analysing…')}
+  try{
+    const out=await analyse(rec);
+    rec.runs.push(out); rec.revealed=true; persist(); render();
+    toast(L('Analisi completata.','Analysis complete.'));
+  }catch(e){ toast(e.message) }
+  finally{ if(btn){btn.disabled=false;btn.textContent=L('Analizza','Analyse')} }
+}
+
+/* ==============================================================
+   Colore dominante: misurato sui pixel della copertina
+   ============================================================== */
+function rgbToHsl(r,g,b){
+  r/=255;g/=255;b/=255;
+  const max=Math.max(r,g,b),min=Math.min(r,g,b),l=(max+min)/2;
+  if(max===min) return [0,0,l*100];
+  const d=max-min, sv=l>.5?d/(2-max-min):d/(max+min);
+  let h;
+  if(max===r) h=((g-b)/d+(g<b?6:0));
+  else if(max===g) h=((b-r)/d+2);
+  else h=((r-g)/d+4);
+  return [h*60, sv*100, l*100];
+}
+function famigliaCromatica(h,s,l){
+  if(s<14) return l>70?'chiaro neutro':(l<28?'scuro neutro':'grigio');
+  if(h<15||h>=345) return 'rosso';
+  if(h<40) return 'arancione';
+  if(h<66) return 'giallo';
+  if(h<160) return 'verde';
+  if(h<200) return 'turchese';
+  if(h<250) return 'blu';
+  if(h<290) return 'viola';
+  if(h<335) return 'magenta';
+  return 'rosa';
+}
+async function misuraColore(rec){
+  const url=rec.urls[rec.cover];
+  if(!url) return null;
+  const img=await new Promise((res,rej)=>{
+    const im=new Image(); im.onload=()=>res(im); im.onerror=rej; im.src=url;
+  });
+  const L=140;
+  const cv=document.createElement('canvas');
+  const k=Math.min(L/img.width, L/img.height, 1);
+  cv.width=Math.max(1,Math.round(img.width*k));
+  cv.height=Math.max(1,Math.round(img.height*k));
+  const cx=cv.getContext('2d',{willReadFrequently:true});
+  cx.drawImage(img,0,0,cv.width,cv.height);
+  const px=cx.getImageData(0,0,cv.width,cv.height).data;
+  // raggruppo i pixel colorati, scartando carta e inchiostro nero
+  const bucket={};
+  for(let i=0;i<px.length;i+=4){
+    if(px[i+3]<200) continue;
+    const [h,sa,li]=rgbToHsl(px[i],px[i+1],px[i+2]);
+    if(li>92 || li<10) continue;          // carta e nero
+    if(sa<12) continue;                    // grigi neutri
+    const key=Math.round(h/12)+'|'+Math.round(sa/20)+'|'+Math.round(li/12);
+    const b=bucket[key]||(bucket[key]={n:0,r:0,g:0,b:0});
+    b.n++; b.r+=px[i]; b.g+=px[i+1]; b.b+=px[i+2];
+  }
+  const tot=cv.width*cv.height;
+  const ks=Object.keys(bucket);
+  if(!ks.length) return {hex:null,famiglia:'nessuno',quota:0};
+  ks.sort((a,b)=>bucket[b].n-bucket[a].n);
+  const top=bucket[ks[0]];
+  if(top.n/tot < 0.02) return {hex:null,famiglia:'nessuno',quota:0};
+  const r=Math.round(top.r/top.n), g=Math.round(top.g/top.n), b=Math.round(top.b/top.n);
+  const hex='#'+[r,g,b].map(v=>v.toString(16).padStart(2,'0')).join('').toUpperCase();
+  const [h,sa,li]=rgbToHsl(r,g,b);
+  return {hex, famiglia:famigliaCromatica(h,sa,li), quota:Math.round(top.n/tot*100)};
+}
+
+/* ==============================================================
+   Lettura dei valori
+   ============================================================== */
+function valOf(src,p){
+  if(!src) return null;
+  const grp = p.g==='copertina' ? src.copertina : src.interno;
+  return grp ? grp[p.k] : null;
+}
+function fmt(v){ return Array.isArray(v) ? (v.length?v.map(tv).join(', '):L('nessuno','none')) : (tv(v)||'—') }
+function lastRun(rec){ return rec.runs.length ? rec.runs[rec.runs.length-1] : null }
+
+/* ==============================================================
+   Render
+   ============================================================== */
+const pane=document.getElementById('pane');
+
+document.querySelectorAll('nav.views button').forEach(b=>{
+  b.onclick=()=>{ state.view=b.dataset.view; render() };
+});
+
+function render(){
+  if(!state.selected && state.records.length) state.selected=state.records[0].id;
+  document.querySelectorAll('nav.views button').forEach(b=>
+    b.setAttribute('aria-current', b.dataset.view===state.view ? 'true':'false'));
+  renderList();
+  ({corpus:viewInsieme,scheda:viewScheda}[state.view]||viewScheda)();
+}
+
+function renderList(){
+  const c=document.getElementById('asideCount');
+  if(c) c.textContent = state.records.length
+    ? state.records.length+(state.records.length===1?' record · ':L(' record · ',' records · '))+state.records.filter(r=>r.runs.length).length+L(' analizzati',' analysed')
+    : L('nessun corpus','no corpus');
+  const el=document.getElementById('recList');
+  el.innerHTML='';
+  state.records.forEach(r=>{
+    const d=document.createElement('div');
+    d.className='rec';
+    d.setAttribute('aria-selected', r.id===state.selected ? 'true':'false');
+    const st=r.runs.length ? (divergences(r).length?'≠':'✓') : (r.manual?'·':'');
+    const cls=r.runs.length ? (divergences(r).length?'st flag':'st done') : 'st';
+    const thumb = r.urls[r.cover] ? '<img class="mini" src="'+r.urls[r.cover]+'" alt="">'
+      : '<span class="mini"></span>';
+    d.innerHTML=thumb+'<span class="nm"></span><span class="'+cls+'">'+st+'</span>';
+    d.querySelector('.nm').textContent=r.id;
+    d.onclick=()=>{state.selected=r.id;state.view='scheda';render()};
+    el.appendChild(d);
+  });
+}
+
+function insTabs(){
+  const t=[['elenco',L('Elenco','List')],['distribuzioni',L('Ricorrenze','Frequencies')],['discrepanze',L('Discrepanze','Discrepancies')]];
+  return '<div class="subtabs">'+t.map(([k,l])=>'<button data-sub="'+k+'" aria-current="'+
+    (state.insSub===k)+'">'+l+'</button>').join('')+'</div>';
+}
+function bindInsTabs(){
+  pane.querySelectorAll('.subtabs button').forEach(b=>b.onclick=()=>{
+    state.insSub=b.dataset.sub; viewInsieme(); });
+}
+
+function viewInsieme(){
+  if(!state.records.length){
+    pane.innerHTML=emptyCorpus();
+    return;
+  }
+  if(state.insSub==='elenco'){ viewElenco(); return }
+  if(state.insSub==='discrepanze'){ pane.innerHTML=insTabs(); viewDiscrepanze(true); bindInsTabs(); return }
+  viewAggregato();
+}
+
+function emptyCorpus(){
+  return '<div class="empty"><h2>'+L('Carica un corpus','Load a corpus')+'</h2><p>'+
+    L('Ogni specimen è una cartella di immagini: il nome della cartella diventa '+
+      'l\'identificativo del record e l\'ordine dei file la sequenza delle pagine. I metadati '+
+      'arrivano da un CSV o da Notion e si agganciano allo stesso identificativo.',
+      'Each specimen is a folder of images: the folder name becomes the record\'s identifier '+
+      'and the order of the files the sequence of pages. Metadata come from a CSV or from Notion '+
+      'and attach to the same identifier.')+'</p></div>';
+}
+function filtroOpts(){
+  const o=[{v:'',l:L('— tutti —','— all —')}];
+  PARAMS.forEach(p=>o.push({v:'p:'+p.k,l:plabel(p)}));
+  state.metaCols.forEach(c=>{o.push({v:'m:'+c,l:mlabel(c)+L(' · archivio',' · archive')})});
+  return o;
+}
+function valoriDi(spec){
+  if(!spec) return [];
+  const set=new Set();
+  state.records.forEach(r=>{
+    const v=axisValue(r,spec);
+    (Array.isArray(v)?v:[v]).forEach(x=>{ if(x!=null) set.add(x) });
+  });
+  return [...set].sort(natural);
+}
+function passaFiltro(r){
+  const f=state.filtro;
+  if(f.q && r.id.toLowerCase().indexOf(f.q.toLowerCase())<0) return false;
+  if(f.k && f.v){
+    const v=axisValue(r,f.k);
+    const arr=Array.isArray(v)?v:[v];
+    if(arr.indexOf(f.v)<0) return false;
+  }
+  return true;
+}
+
+function viewElenco(){
+  const cols=[
+    {k:'__id',l:'record'},
+    {k:'__n',l:'img'},
+    {k:'__col',l:L('colore','colour')},
+    ...PARAMS.filter(p=>['salienza','tipo_di_immagine','funzione_dell_immagine',
+      'palette','esempi_applicativi_forma'].indexOf(p.k)>=0).map(p=>({k:'p:'+p.k,l:plabel(p)})),
+    ...state.metaCols.filter(c=>state.records.some(r=>r.meta[c]))
+        .map(c=>({k:'m:'+c,l:mlabel(c)}))
+  ];
+  const f=state.filtro;
+  let h=insTabs();
+  h+='<h2>Corpus</h2><p class="note">'+state.records.length+' record, '+
+    state.records.filter(r=>r.runs.length).length+L(' analizzati. ',' analysed. ')+
+    L('Clicca una riga per aprire la scheda, o un\'intestazione per riordinare.',
+      'Click a row to open the record, or a header to sort.')+'</p>';
+  const daFare=state.records.filter(r=>!r.runs.length).length;
+  h+='<div class="row" style="margin:2px 0 14px;gap:9px">'+
+    '<button class="btn small" id="btnBatch"'+(daFare?'':' disabled')+'>'+L('Analizza i non analizzati','Analyse the unanalysed')+'</button>'+
+    '<span class="cnt">'+L('al massimo','at most')+'</span><input type="text" id="batchN" value="10" '+
+      'style="width:52px;text-align:center">'+
+    '<span class="cnt">'+L('di ','of ')+daFare+L(' in attesa',' waiting')+'</span>'+
+    '<button class="btn ghost small hidden" id="btnStop">'+L('Ferma','Stop')+'</button></div>';
+  h+='<div class="filters">'+
+    '<div class="fx"><label class="f">'+L('cerca nel nome','search name')+'</label>'+
+      '<input type="text" id="fq" value="'+esc(f.q)+'" placeholder="folio…"></div>'+
+    '<div class="fx"><label class="f">'+L('filtra per','filter by')+'</label><select id="fk">'+
+      filtroOpts().map(o=>'<option value="'+o.v+'"'+(o.v===f.k?' selected':'')+'>'+
+        esc(o.l)+'</option>').join('')+'</select></div>'+
+    '<div class="fx"><label class="f">'+L('valore','value')+'</label><select id="fv"'+(f.k?'':' disabled')+'>'+
+      '<option value="">'+L('— qualsiasi —','— any —')+'</option>'+
+      valoriDi(f.k).map(v=>'<option value="'+esc(v)+'"'+(v===f.v?' selected':'')+'>'+esc(tv(v))+'</option>').join('')+
+      '</select></div>'+
+    (f.q||f.k?'<button class="btn ghost small" id="fclear">'+L('Azzera','Clear')+'</button>':'')+
+    '</div>';
+
+  let rows=state.records.filter(passaFiltro);
+  const sk=state.sortK||'__id', sd=state.sortD||1;
+  const cell=(r,k)=>{
+    if(k==='__id') return r.id;
+    if(k==='__n') return r.files.length;
+    if(k==='__col') return (r.colore&&r.colore.famiglia)||'';
+    const v=axisValue(r,k); return Array.isArray(v)?v.join(', '):(v==null?'':v);
+  };
+  rows.sort((a,b)=>natural(cell(a,sk),cell(b,sk))*sd);
+
+  h+='<table class="list"><thead><tr><th></th>'+cols.map(c=>'<th data-k="'+c.k+'" class="'+
+    (c.k===sk?(sd>0?'up':'down'):'')+'">'+esc(c.l)+'</th>').join('')+'</tr></thead><tbody>';
+  rows.forEach(r=>{
+    const th=r.urls[r.cover]?'<img class="mini" src="'+r.urls[r.cover]+'" alt="">':'<span class="mini"></span>';
+    h+='<tr data-id="'+esc(r.id)+'" class="'+(r.id===state.selected?'sel':'')+'"><td>'+th+'</td>'+
+      cols.map(c=>{
+        if(c.k==='__col' && r.colore && r.colore.hex)
+          return '<td><span class="sw" style="background:'+esc(r.colore.hex)+'"></span>'+
+            esc(tcol(r.colore.famiglia))+'</td>';
+        const shown = c.k.slice(0,2)==='p:' ? fmt(axisValue(r,c.k)) : c.k==='__col' ? tcol(cell(r,c.k)) : cell(r,c.k);
+        return '<td'+(c.k==='__id'?' class="id"':'')+'>'+esc(shown||'—')+'</td>';
+      }).join('')+'</tr>';
+  });
+  h+='</tbody></table>';
+  if(!rows.length) h+='<p class="note">'+L('Nessun record corrisponde al filtro.','No records match the filter.')+'</p>';
+  pane.innerHTML=h;
+  bindInsTabs();
+  const q=document.getElementById('fq');
+  q.oninput=()=>{state.filtro.q=q.value; viewElenco(); document.getElementById('fq').focus()};
+  document.getElementById('fk').onchange=e=>{state.filtro.k=e.target.value;state.filtro.v='';viewElenco()};
+  const fv=document.getElementById('fv');
+  if(fv) fv.onchange=e=>{state.filtro.v=e.target.value;viewElenco()};
+  const fc=document.getElementById('fclear');
+  if(fc) fc.onclick=()=>{state.filtro={q:'',k:'',v:''};viewElenco()};
+  const bb=document.getElementById('btnBatch');
+  if(bb) bb.onclick=()=>runBatch(parseInt(document.getElementById('batchN').value,10)||10);
+  pane.querySelectorAll('thead th[data-k]').forEach(th=>th.onclick=()=>{
+    if(state.sortK===th.dataset.k) state.sortD=-(state.sortD||1);
+    else {state.sortK=th.dataset.k; state.sortD=1}
+    viewElenco();
+  });
+  pane.querySelectorAll('tbody tr').forEach(tr=>tr.onclick=()=>{
+    state.selected=tr.dataset.id; state.view='scheda'; render()});
+}
+
+function viewScheda(){
+  const rec=state.records.find(r=>r.id===state.selected);
+  if(!rec){
+    pane.innerHTML = state.records.length
+      ? '<div class="empty"><h2>'+L('Nessun record selezionato','No record selected')+'</h2>'+
+        '<p>'+L('Scegli uno specimen dall\'elenco a sinistra.','Choose a specimen from the list on the left.')+'</p></div>'
+      : emptyCorpus();
+    return;
+  }
+
+  const run = rec.viewRun!=null && rec.runs[rec.viewRun] ? rec.runs[rec.viewRun] : lastRun(rec);
+  const blind = rec.runs.length && !rec.revealed;
+
+  const schTabs='<div class="subtabs">'+
+    [['analisi',L('Analisi','Analysis')],['metadati',L('Metadati','Metadata')]].map(([k,l])=>'<button data-s="'+k+
+      '" aria-current="'+(state.schSub===k)+'">'+l+'</button>').join('')+'</div>';
+
+  if(state.schSub==='metadati'){
+    const noti=META.map(m=>m.k).filter(k=>rec.meta[k]);
+    const altri=Object.keys(rec.meta).filter(k=>rec.meta[k]&&!metaDef(k));
+    const keys=[...noti,...altri];
+    let m=schTabs+'<h2>'+esc(rec.id)+'</h2>';
+    if(keys.length){
+      m+='<dl class="meta">'+keys.map(k=>
+        '<dt>'+esc(mlabel(k))+'</dt><dd>'+esc(rec.meta[k])+'</dd>').join('')+'</dl>';
+      m+='<p class="note" style="margin-top:18px">'+L('I metadati sono di sola lettura: vengono '+
+        'dall\'archivio e non dall\'analisi. Nella lettura aggregata puoi incrociarli con '+
+        'i parametri rilevati.','Metadata are read-only: they come from the archive, not from the '+
+        'analysis. In the aggregate view you can cross them with the recorded parameters.')+'</p>';
+    } else {
+      m+='<p class="note">'+L('Nessun metadato agganciato a questo record. Caricane una tabella '+
+        'con Metadati, oppure sincronizza da Notion: in entrambi i casi l\'aggancio avviene '+
+        'sul nome della cartella, che qui è ','No metadata linked to this record. Load a table '+
+        'with Metadata, or sync from Notion: either way the link is made on the folder name, '+
+        'which here is ')+'<b>'+esc(rec.id)+'</b>.</p>';
+    }
+    m+='<h3>'+L('Evidenze rilevate','Evidence found')+'</h3>';
+    m+='<p class="note">'+L('Trascrizioni di ciò che è scritto sull\'artefatto: fonderia, '+
+      'distributore, indirizzi, date, sigle. Sono proposte, non metadati: diventano tali '+
+      'solo se le accetti.','Transcriptions of what is written on the artefact: foundry, '+
+      'distributor, addresses, dates, codes. They are suggestions, not metadata: they become '+
+      'metadata only if you accept them.')+'</p>';
+    m+='<div class="row" style="margin-bottom:10px"><button class="btn small" id="btnEvid">'+
+      (rec.evidenze?L('Rileggi le evidenze','Read the evidence again'):L('Estrai evidenze','Extract evidence'))+'</button></div>';
+    if(rec.evidenze){
+      if(!rec.evidenze.length) m+='<p class="note">'+L('Nessuna evidenza testuale trovata.','No textual evidence found.')+'</p>';
+      rec.evidenze.forEach((e,i)=>{
+        const d=metaDef(e.campo_suggerito);
+        const gia = d && rec.meta[e.campo_suggerito]===e.valore_suggerito;
+        m+='<div class="evid"><span class="q">«'+esc(e.testo)+'»</span>'+
+          '<div class="meta2">'+esc(LANG==='en'?(EVID_EN[e.tipo]||e.tipo):e.tipo)+L(' · scatto ',' · shot ')+e.immagine+
+          (d?L(' · propone <b>',' · suggests <b>')+esc(mlabel(e.campo_suggerito))+'</b>: '+esc(e.valore_suggerito):'')+'</div>'+
+          (d&&e.valore_suggerito&&!gia
+            ? '<div class="row" style="margin-top:6px"><button class="btn ghost small" '+
+              'data-ev="'+i+'">'+L('Accetta','Accept')+'</button></div>'
+            : (gia?'<div class="meta2" style="color:var(--accent)">'+L('già nei metadati','already in metadata')+'</div>':''))+
+          '</div>';
+      });
+    }
+    m+='<h3>'+L('File','Files')+'</h3><dl class="meta">'+rec.files.map((f,i)=>'<dt>'+(i===rec.cover?L('copertina','cover'):i+1)+
+      '</dt><dd>'+esc(f.name)+'</dd>').join('')+'</dl>';
+    pane.innerHTML=m;
+    pane.querySelectorAll('.subtabs button').forEach(b=>b.onclick=()=>{
+      state.schSub=b.dataset.s; render()});
+    const be=document.getElementById('btnEvid');
+    if(be) be.onclick=async ()=>{
+      be.disabled=true; be.textContent=L('Lettura in corso…','Reading…');
+      try{
+        const out=await analyse(rec,'evidenze');
+        rec.evidenze=out.evidenze||[]; persist(); render();
+        toast(rec.evidenze.length+L(' evidenze rilevate.',' pieces of evidence found.'));
+      }catch(e){ toast(e.message); be.disabled=false; be.textContent=L('Estrai evidenze','Extract evidence') }
+    };
+    pane.querySelectorAll('[data-ev]').forEach(b=>b.onclick=()=>{
+      const e=rec.evidenze[+b.dataset.ev];
+      rec.meta[e.campo_suggerito]=e.valore_suggerito;
+      if(state.metaCols.indexOf(e.campo_suggerito)<0) state.metaCols.push(e.campo_suggerito);
+      persist(); render(); toast(L('Metadato aggiornato.','Metadata updated.'));
+    });
+    return;
+  }
+
+  let html=schTabs+'<div class="sheet"><div>';
+  html+='<h2>'+esc(rec.id)+'</h2>';
+  if(rec.colore) html+='<p class="col-line">'+
+    (rec.colore.hex
+      ? '<span class="sw" style="background:'+esc(rec.colore.hex)+'"></span>'+
+        '<b>'+esc(rec.colore.hex)+'</b> · '+esc(tcol(rec.colore.famiglia))+
+        ' · '+rec.colore.quota+L('% della copertina','% of the cover')
+      : L('nessun colore dominante misurato','no dominant colour measured'))+
+    '<button class="lnk" id="btnColore" style="margin-left:10px">'+L('rimisura','measure again')+'</button></p>';
+  const metaTxt=Object.keys(rec.meta).filter(k=>rec.meta[k]).map(k=>mlabel(k)+': '+rec.meta[k]).join(' · ');
+  html+='<p class="note">'+(metaTxt?esc(metaTxt):L('nessun metadato agganciato','no metadata linked'))+'</p>';
+  html+='<div class="thumbs">';
+  rec.files.forEach((f,i)=>{
+    html+='<div class="thumb'+(i===rec.cover?' cover':'')+'" data-i="'+i+'">'+
+      '<img src="'+rec.urls[i]+'" alt="">'+
+      (i===rec.cover?'':'<button class="setcov">'+L('copertina','cover')+'</button>')+
+      '<div class="cap">'+esc(f.name)+'</div></div>';
+  });
+  html+='</div>';
+
+  if(run && rec.revealed){
+    html+='<h3>'+L('Descrizione','Description')+'</h3>'+
+      (LANG==='en'?'<p class="note" style="margin:0">Texts written by the model are in Italian.</p>':'')+
+      '<p class="desc">'+esc(run.descrizione||'')+'</p>';
+    const kw=(run.artefatto&&run.artefatto.parole_chiave)||[];
+    html+='<h3>'+L('Tema e parole chiave','Theme and keywords')+'</h3>';
+    html+='<p class="desc">'+esc((run.artefatto&&run.artefatto.tema_dominante)||'—')+'</p>';
+    html+= kw.length ? '<ul class="kw">'+kw.map(k=>'<li>'+esc(k.originale)+
+      ' <span style="color:var(--muted)">— '+esc(k.italiano)+'</span></li>').join('')+'</ul>'
+      : '<p class="note">'+L('Nessun testo descrittivo rilevato.','No descriptive text found.')+'</p>';
+    const unc=run.incertezze||[];
+    if(unc.length){
+      html+='<h3>'+L('Incertezze dichiarate','Declared uncertainties')+'</h3>';
+      unc.forEach(u=>{html+='<div class="unc"><b>'+esc(paramName(u.parametro))+'</b> → '+
+        esc(tv(u.valore_alternativo))+'<br><span>'+esc(u.motivo)+'</span></div>'});
+    }
+  }
+  html+='</div><div>';
+
+  /* colonna destra: la griglia */
+  const showModel = rec.revealed && run;
+  html+='<div class="row" style="justify-content:space-between;margin-bottom:2px">'+
+    '<h2 style="margin:0">'+L('Griglia','Grid')+'</h2>'+
+    '<button class="btn small" id="btnRun">'+L('Analizza','Analyse')+'</button></div>';
+  if(rec.runs.length>1 || (rec.runs.length===1 && rec.revealed)){
+    html+='<div class="runbar"><span>run</span>';
+    rec.runs.forEach((r,i)=>{
+      const cur = (rec.viewRun==null? i===rec.runs.length-1 : rec.viewRun===i);
+      html+='<button data-run="'+i+'" aria-current="'+cur+'">'+(i+1)+'</button>';
+    });
+    html+='<span>'+esc((run&&run._at||'').slice(0,16).replace('T',' '))+'</span></div>';
+  }
+  if(blind){
+    html+='<p class="note">'+L('Analisi eseguita e nascosta. Compila la griglia, poi rivela il confronto.',
+      'Analysis done and hidden. Fill in the grid, then reveal the comparison.')+'</p>'+
+      '<button class="btn small" id="btnReveal">'+L('Rivela l\'analisi','Reveal the analysis')+'</button>';
+  } else if(!rec.runs.length){
+    html+='<p class="note">'+L('Compila a mano prima di analizzare se vuoi una codifica cieca.',
+      'Fill in by hand before analysing if you want a blind coding.')+'</p>';
+  }
+
+  html+='<table class="grid"><thead><tr><th>'+L('parametro','parameter')+'</th><th>'+
+    (showModel?L('valore','value'):L('la tua codifica','your coding'))+'</th></tr></thead><tbody>';
+  let group='';
+  PARAMS.forEach(p=>{
+    if(p.g!==group){group=p.g;
+      html+='<tr><td colspan="2" style="border:0;padding-top:12px;font-size:12px;color:var(--muted)">'+
+        (group==='copertina'?L('copertina','cover'):L('interno','inside pages'))+'</td></tr>'}
+    const mine = rec.manual ? valOf(rec.manual,p) : null;
+    const theirs = showModel ? valOf(run,p) : null;
+    const fixed = showModel && rec.corretta ? valOf(rec.corretta,p) : null;
+    const compilato = mine!=null && !(Array.isArray(mine)&&!mine.length);   // solo i parametri codificati a mano
+    const differs = showModel && rec.manual && compilato && JSON.stringify(mine)!==JSON.stringify(theirs);
+    const corrected = showModel && rec.corretta && JSON.stringify(fixed)!==JSON.stringify(theirs);
+    html+='<tr class="'+(differs?'diff':'')+'"><td class="k">'+esc(plabel(p))+'</td><td class="v">';
+    const shown = showModel ? (rec.corretta ? fixed : theirs) : mine;
+    if(p.multi){
+      html+='<div class="chips" data-k="'+p.k+'" data-g="'+p.g+'">'+
+        p.v.map(o=>'<button class="chip" data-o="'+esc(o)+'" aria-pressed="'+
+          ((shown||[]).indexOf(o)>=0)+'">'+esc(tv(o))+'</button>').join('')+'</div>';
+    } else {
+      html+='<select data-k="'+p.k+'" data-g="'+p.g+'"><option value=""></option>'+
+        p.v.map(o=>'<option value="'+esc(o)+'"'+(shown===o?' selected':'')+'>'+esc(tv(o))+'</option>').join('')+'</select>';
+    }
+    if(differs) html+='<span class="was">'+L('codifica cieca: ','blind coding: ')+esc(fmt(mine))+'</span>';
+    if(corrected) html+='<span class="was" style="color:var(--muted)">'+L('rilevato dal modello: ','recorded by the model: ')+
+      esc(fmt(theirs))+'</span>';
+    html+='</td></tr>';
+  });
+  html+='</tbody></table>';
+  html+='<div class="row" style="margin-top:14px">'+
+    (rec.manual?'<button class="btn ghost small" id="btnClearManual">'+L('Azzera la codifica cieca','Clear the blind coding')+'</button>':'')+
+    (rec.corretta?'<button class="btn ghost small" id="btnClearFix">'+L('Torna ai valori del modello','Back to the model\'s values')+'</button>':'')+
+    '</div>';
+  html+='</div></div>';
+
+  pane.innerHTML=html;
+  pane.querySelectorAll('.subtabs button').forEach(b=>b.onclick=()=>{
+    state.schSub=b.dataset.s; render()});
+
+  pane.querySelectorAll('.thumb .setcov').forEach(b=>b.onclick=(ev)=>{
+    ev.stopPropagation();
+    rec.cover=+b.closest('.thumb').dataset.i; persist(); render();
+  });
+  const bcol=document.getElementById('btnColore');
+  if(bcol) bcol.onclick=async ()=>{
+    try{ rec.colore=await misuraColore(rec); persist(); render() }
+    catch(e){ toast(L('Misura non riuscita: ','Measurement failed: ')+e.message) }
+  };
+  const br=document.getElementById('btnRun');
+  if(br) br.onclick=()=>runOne(rec,br);
+  const bv=document.getElementById('btnReveal');
+  if(bv) bv.onclick=()=>{rec.revealed=true;persist();render()};
+  pane.querySelectorAll('.runbar button[data-run]').forEach(b=>b.onclick=()=>{
+    rec.viewRun=+b.dataset.run; render()});
+  const bc=document.getElementById('btnClearManual');
+  if(bc) bc.onclick=()=>{rec.manual=null;persist();render()};
+  const bf=document.getElementById('btnClearFix');
+  if(bf) bf.onclick=()=>{rec.corretta=null;persist();render()};
+
+  /* editing: se l'analisi è visibile modifico il run, altrimenti la mia codifica */
+  function target(){
+    if(showModel){
+      if(!rec.corretta) rec.corretta={copertina:Object.assign({},run.copertina),
+        interno:Object.assign({},run.interno)};
+      return rec.corretta;
+    }
+    if(!rec.manual) rec.manual={copertina:{},interno:{}};
+    return rec.manual;
+  }
+  pane.querySelectorAll('table.grid select').forEach(s=>s.onchange=()=>{
+    const t=target(); const grp = s.dataset.g==='copertina'?'copertina':'interno';
+    t[grp]=t[grp]||{}; t[grp][s.dataset.k]=s.value||null;
+    persist(); render();
+  });
+  pane.querySelectorAll('.chips .chip').forEach(c=>c.onclick=()=>{
+    const box=c.closest('.chips'); const t=target();
+    const grp = box.dataset.g==='copertina'?'copertina':'interno';
+    t[grp]=t[grp]||{};
+    const cur=new Set(t[grp][box.dataset.k]||[]);
+    if(cur.has(c.dataset.o)) cur.delete(c.dataset.o); else cur.add(c.dataset.o);
+    t[grp][box.dataset.k]=[...cur];
+    persist(); render();
+  });
+}
+
+/* --- aggregato ------------------------------------------------- */
+function decennio(rec){
+  const raw=String(rec.meta['anno']||'');
+  const m=raw.match(/(1[89]\d{2}|20\d{2})/);
+  if(!m) return '—';
+  return (Math.floor(+m[1]/10)*10)+'s';
+}
+function axisOptions(){
+  const a=PARAMS.map(p=>({v:'p:'+p.k,l:plabel(p)}));
+  a.push({v:'d:decennio',l:L('decennio · archivio','decade · archive')});
+  a.push({v:'x:colore',l:L('colore dominante · misurato','dominant colour · measured')});
+  state.metaCols.forEach(c=>{ if(c==='anno') return;
+    a.push({v:'m:'+c,l:mlabel(c)+L(' · archivio',' · archive')})});
+  return a;
+}
+function axisValue(rec,spec){
+  const run=lastRun(rec); if(!spec) return null;
+  const [kind,key]=[spec.slice(0,1),spec.slice(2)];
+  if(kind==='d') return decennio(rec);
+  if(kind==='x') return (rec.colore&&rec.colore.famiglia)||'—';
+  if(kind==='m'){
+    const raw=rec.meta[key];
+    if(raw==null||raw==='') return '—';
+    const d=metaDef(key);
+    if(d&&d.multi){
+      const parts=String(raw).split(/\s*[;|]\s*|,\s+/).filter(Boolean);
+      return parts.length?parts:'—';
+    }
+    return String(raw);
+  }
+  const p=PARAMS.find(x=>x.k===key);
+  const v=valOf(run,p);
+  if(Array.isArray(v)) return v.length?v:['—'];
+  return v||'—';
+}
+
+function viewAggregato(){
+  const analysed=state.records.filter(r=>r.runs.length);
+  const primoMeta=(state.axA||'').slice(0,2)==='m:';
+  if(!analysed.length && !primoMeta){
+    pane.innerHTML=insTabs()+'<div class="empty"><h2>'+L('Ancora nessuna analisi','No analyses yet')+'</h2>'+
+      '<p>'+L('La lettura aggregata compare quando almeno un record è stato analizzato. '+
+      'Diventa utile con un corpus ampio e con i metadati agganciati: su pochi record '+
+      'le frequenze non dicono nulla, mentre l\'elenco resta leggibile.',
+      'The aggregate view appears once at least one record has been analysed. It becomes '+
+      'useful with a large corpus and linked metadata: on a few records frequencies say '+
+      'nothing, while the list stays readable.')+'</p></div>';
+    bindInsTabs(); return;
+  }
+  const opts=axisOptions();
+  const a=state.axA||'p:funzione_dell_immagine', b=state.axB||'';
+  const soloMeta = a.slice(0,2)==='m:' && (!b || b.slice(0,2)==='m:');
+  const base = soloMeta ? state.records : analysed;
+  pane.innerHTML=insTabs()+'<h2>'+L('Ricorrenze','Frequencies')+'</h2>'+
+    '<p class="note">'+L('Quanto spesso ricorre una caratteristica, e quali caratteristiche '+
+    'si presentano insieme. Scegliendo una sola proprietà la vista mostra '+
+    'quante volte ricorre ciascun valore; aggiungendone una seconda costruisce una tabella '+
+    'a doppia entrata, dove ogni casella dice quanti record hanno insieme quei due valori. '+
+    'Le caselle vuote sono combinazioni che nel corpus non si presentano mai.',
+    'How often a feature occurs, and which features occur together. With one property the '+
+    'view shows how many times each value occurs; adding a second builds a cross table, where '+
+    'each cell says how many records have both values. Empty cells are combinations that '+
+    'never occur in the corpus.')+'</p>'+
+    '<p class="frase">'+L('Conta i record per ','Count records by ')+
+      '<select id="axA">'+opts.map(o=>'<option value="'+o.v+'"'+(o.v===a?' selected':'')+'>'+
+        esc(o.l)+'</option>').join('')+'</select>'+
+      L(' e incrociali con ',' and cross them with ')+'<select id="axB">'+
+      '<option value="">'+L('— niente, solo il conteggio —','— nothing, count only —')+'</option>'+
+      opts.map(o=>'<option value="'+o.v+'"'+(o.v===b?' selected':'')+'>'+esc(o.l)+'</option>').join('')+
+      '</select></p>'+
+    (soloMeta?'<p class="note">'+L('Stai incrociando due faccette d\'archivio: il conteggio '+
+      'usa tutti i '+state.records.length+' record, anche quelli non ancora analizzati.',
+      'You are crossing two archive facets: the count uses all '+state.records.length+
+      ' records, including those not yet analysed.')+'</p>'
+     :'<p class="note">'+L('Il conteggio usa i '+analysed.length+' record analizzati.',
+      'The count uses the '+analysed.length+' analysed records.')+'</p>')+
+    '<div id="crossBox"></div>';
+  bindInsTabs();
+  document.getElementById('axA').onchange=e=>{state.axA=e.target.value;viewAggregato()};
+  document.getElementById('axB').onchange=e=>{state.axB=e.target.value;viewAggregato()};
+
+  const box=document.getElementById('crossBox');
+  const asArr=v=>Array.isArray(v)?v:[v];
+  if(!b){
+    const counts={};
+    base.forEach(r=>asArr(axisValue(r,a)).forEach(v=>counts[v]=(counts[v]||0)+1));
+    const max=Math.max(...Object.values(counts));
+    box.innerHTML='<div class="bars" style="margin-top:6px">'+
+      Object.keys(counts).sort((x,y)=>counts[y]-counts[x]).map(k=>
+        '<div class="bar"><div>'+esc(tcol(tv(k)))+'</div><div><div class="t" style="width:'+
+        Math.round(counts[k]/max*100)+'%"></div></div><div class="n">'+counts[k]+'</div></div>').join('')+
+      '</div>';
+    return;
+  }
+  const rowsSet=new Set(),colsSet=new Set(),cell={};
+  base.forEach(r=>{
+    asArr(axisValue(r,a)).forEach(rv=>{ rowsSet.add(rv);
+      asArr(axisValue(r,b)).forEach(cv=>{ colsSet.add(cv);
+        const k=rv+'\u0000'+cv; cell[k]=(cell[k]||0)+1 }) });
+  });
+  const rows=[...rowsSet].sort(natural), cols=[...colsSet].sort(natural);
+  let h='<table class="cross"><thead><tr><th class="rh"></th>'+
+    cols.map(c=>'<th>'+esc(tcol(tv(c)))+'</th>').join('')+'</tr></thead><tbody>';
+  rows.forEach(rv=>{
+    h+='<tr><td class="rh">'+esc(tcol(tv(rv)))+'</td>'+cols.map(cv=>{
+      const n=cell[rv+'\u0000'+cv]||0;
+      return '<td class="'+(n?(n>=3?'hot':''):'z')+'">'+(n||'·')+'</td>';
+    }).join('')+'</tr>';
+  });
+  box.innerHTML=h+'</tbody></table>';
+}
+
+/* --- discrepanze ------------------------------------------------ */
+function divergences(rec){
+  const run=lastRun(rec);
+  if(!run||!rec.manual||!rec.revealed) return [];
+  return PARAMS.filter(p=>{
+    const m=valOf(rec.manual,p), t=valOf(run,p);
+    if(m==null||(Array.isArray(m)&&!m.length)) return false;
+    return JSON.stringify(m)!==JSON.stringify(t);
+  }).map(p=>({p,mine:valOf(rec.manual,p),theirs:valOf(run,p)}));
+}
+
+function accordion(id,titolo,conteggio,corpo,colore){
+  const aperto = !!state.aperti[id];
+  return '<div class="acc'+(aperto?' on':'')+'">'+
+    '<button class="acc-h" data-acc="'+esc(id)+'" aria-expanded="'+aperto+'">'+
+      '<span class="acc-t">'+esc(titolo)+'</span>'+
+      '<span class="acc-n"'+(colore?' style="color:'+colore+'"':'')+'>'+conteggio+'</span>'+
+    '</button>'+
+    (aperto?'<div class="acc-b">'+corpo+'</div>':'')+'</div>';
+}
+function bindAccordion(){
+  pane.querySelectorAll('[data-acc]').forEach(b=>b.onclick=()=>{
+    const k=b.dataset.acc;
+    state.aperti[k]=!state.aperti[k];
+    viewInsieme();
+  });
+}
+
+function viewDiscrepanze(append){
+  const cieche=state.records.filter(r=>r.manual&&r.runs.length&&r.revealed);
+  let ok=0,tot=0;
+  cieche.forEach(r=>PARAMS.forEach(p=>{
+    const m=valOf(r.manual,p); if(m==null||(Array.isArray(m)&&!m.length)) return;
+    tot++; if(JSON.stringify(m)===JSON.stringify(valOf(lastRun(r),p))) ok++;
+  }));
+
+  let h=(append?'':'<h2>'+L('Discrepanze','Discrepancies')+'</h2>');
+  h+='<p class="note">'+L('Tre misure distinte. L\'accordo confronta la codifica compilata prima '+
+    'di vedere l\'analisi, ed è l\'unica che vale come misura. Le correzioni contano gli '+
+    'interventi fatti dopo averla vista, che dicono quanto il modello ha sbagliato ma non '+
+    'quanto le due letture coincidono. Le incertezze sono dichiarate dal modello e segnalano '+
+    'dove la griglia ha maglie larghe.','Three distinct measures. Agreement compares the coding '+
+    'made before seeing the analysis, and is the only one that counts as a measure. Corrections '+
+    'count the changes made after seeing it: they say how often the model was wrong, not how far '+
+    'the two readings coincide. Uncertainties are declared by the model and show where the grid '+
+    'is loose.')+'</p>';
+
+  /* ---- 1. accordo con la codifica cieca ---- */
+  h+='<h3>'+L('Accordo con la codifica cieca','Agreement with the blind coding')+'</h3>';
+  if(!tot){
+    h+='<p class="note">'+L('Nessun record ha ancora una codifica compilata prima dell\'analisi. '+
+      'Per ottenerla: apri una scheda non analizzata, compila la griglia, poi premi Analizza.',
+      'No record has a coding made before the analysis yet. To get one: open an unanalysed '+
+      'record, fill in the grid, then press Analyse.')+'</p>';
+  } else {
+    h+='<p class="desc">'+ok+(ok===1?L(' valore coincidente',' matching value'):L(' valori coincidenti',' matching values'))+
+      L(' su ',' out of ')+tot+L(' confrontati, in ',' compared, in ')+cieche.length+' record ('+Math.round(ok/tot*100)+'%).</p>';
+    const perParam={};
+    cieche.forEach(r=>divergences(r).forEach(dv=>
+      (perParam[plabel(dv.p)]=perParam[plabel(dv.p)]||[]).push({id:r.id,dv})));
+    const ks=Object.keys(perParam).sort((a,b)=>perParam[b].length-perParam[a].length);
+    if(!ks.length) h+='<p class="note">'+L('Nessuna divergenza.','No disagreements.')+'</p>';
+    ks.forEach(k=>{
+      const corpo=perParam[k].map(x=>'<div class="ditem"><span class="id">'+esc(x.id)+'</span>'+
+        '<div class="m">'+L('tu: ','you: ')+esc(fmt(x.dv.mine))+'</div>'+
+        '<div class="m">'+L('modello: ','model: ')+esc(fmt(x.dv.theirs))+'</div></div>').join('');
+      h+=accordion('a:'+k,k,perParam[k].length,corpo,'var(--flag)');
+    });
+  }
+
+  /* ---- 2. correzioni dopo la rivelazione ---- */
+  h+='<h3>'+L('Correzioni dopo la rivelazione','Corrections after the reveal')+'</h3>';
+  const perCorr={}; let nCorr=0, recCorr=0;
+  state.records.forEach(r=>{
+    if(!r.corretta||!r.runs.length) return;
+    let toccato=false;
+    PARAMS.forEach(p=>{
+      const c=valOf(r.corretta,p), t=valOf(lastRun(r),p);
+      if(JSON.stringify(c)===JSON.stringify(t)) return;
+      nCorr++; toccato=true;
+      (perCorr[plabel(p)]=perCorr[plabel(p)]||[]).push({id:r.id,c,t});
+    });
+    if(toccato) recCorr++;
+  });
+  if(!nCorr) h+='<p class="note">'+L('Nessuna correzione apportata.','No corrections made.')+'</p>';
+  else{
+    h+='<p class="desc">'+nCorr+(nCorr===1?L(' valore corretto',' value corrected'):L(' valori corretti',' values corrected'))+
+      ' in '+recCorr+(recCorr===1?' record':L(' record',' records'))+'.</p>';
+    Object.keys(perCorr).sort((a,b)=>perCorr[b].length-perCorr[a].length).forEach(k=>{
+      const corpo=perCorr[k].map(x=>'<div class="ditem"><span class="id">'+esc(x.id)+'</span>'+
+        '<div class="m">'+L('modello: ','model: ')+esc(fmt(x.t))+'</div>'+
+        '<div class="m">'+L('corretto in: ','corrected to: ')+esc(fmt(x.c))+'</div></div>').join('');
+      h+=accordion('c:'+k,k,perCorr[k].length,corpo);
+    });
+  }
+
+  /* ---- 3. incertezze dichiarate ---- */
+  h+='<h3>'+L('Incertezze dichiarate dal modello','Uncertainties declared by the model')+'</h3>';
+  const unc={}; let nUnc=0;
+  state.records.forEach(r=>{
+    const run=lastRun(r); if(!run) return;
+    (run.incertezze||[]).forEach(u=>{ nUnc++;
+      const pn=paramName(u.parametro); (unc[pn]=unc[pn]||[]).push({id:r.id,u}) });
+  });
+  if(!nUnc) h+='<p class="note">'+L('Nessuna incertezza dichiarata finora.','No uncertainties declared so far.')+'</p>';
+  else{
+    h+='<p class="desc">'+nUnc+(nUnc===1?L(' incertezza',' uncertainty'):L(' incertezze',' uncertainties'))+L(' su ',' across ')+
+      Object.keys(unc).length+(Object.keys(unc).length===1?L(' parametro',' parameter'):L(' parametri',' parameters'))+'.</p>';
+    Object.keys(unc).sort((a,b)=>unc[b].length-unc[a].length).forEach(k=>{
+      const corpo=unc[k].map(x=>'<div class="ditem"><span class="id">'+esc(x.id)+'</span>'+
+        '<div class="m">'+L('valore alternativo: ','alternative value: ')+esc(tv(x.u.valore_alternativo))+'</div>'+
+        '<div class="m">'+esc(x.u.motivo)+'</div></div>').join('');
+      h+=accordion('u:'+k,k,unc[k].length,corpo);
+    });
+  }
+
+  if(append) pane.insertAdjacentHTML('beforeend',h); else pane.innerHTML=h;
+  bindAccordion();
+}
+
+/* --- pannello impostazioni ---------------------------------------- */
+function openDrawer(on){
+  document.getElementById('drawer').classList.toggle('on',on);
+  document.getElementById('drawer').setAttribute('aria-hidden',String(!on));
+  document.getElementById('scrim').classList.toggle('on',on);
+  document.getElementById('btnDrawer').setAttribute('aria-expanded',String(on));
+  if(on) renderDrawer();
+}
+function renderDrawer(){
+  document.getElementById('drawerBody').innerHTML=
+   '<label class="f">'+L('Chiave Google AI Studio','Google AI Studio key')+'</label>'+
+   '<input type="password" id="cfgKey" value="'+esc(state.cfg.key)+'" placeholder="AIza…">'+
+   '<label class="f" style="margin-top:12px">'+L('Modello','Model')+'</label>'+
+   '<select id="cfgModel" style="width:100%">'+modelOptions()+'</select>'+
+   '<div class="row" style="margin-top:7px">'+
+   '<button class="btn ghost small" id="btnModels">'+L('Verifica con la mia chiave','Check with my key')+'</button></div>'+
+   '<div id="modelList"></div>'+
+   '<p class="note">'+L('Sono preimpostati sia modelli gratuiti sia modelli a pagamento, '+
+   'soggetti a disponibilità e modifiche da parte di Google.','Both free and paid models are '+
+   'preset, subject to availability and changes by Google.')+'</p>'+
+   '<label class="f">'+L('Limite di token in uscita','Output token limit')+'</label>'+
+   '<input type="text" id="cfgTok" value="'+state.cfg.maxTokens+'">'+
+   '<div class="row" style="margin-top:12px">'+
+   '<label><input type="checkbox" id="cfgThink"'+(state.cfg.noThinking?' checked':'')+
+   '> '+L('Riduci al minimo il ragionamento interno','Keep internal reasoning to a minimum')+'</label></div>'+
+   '<p class="note" style="margin-top:2px">'+L('Sui modelli 2.5 Flash lo spegne; dai modelli 3 in poi non si può spegnere del tutto e viene impostato al livello più basso.',
+   'On 2.5 Flash models it turns reasoning off; from the 3 models on it cannot be turned off entirely and is set to the lowest level.')+'</p>'+
+   '<p class="note" style="margin-top:14px">'+L('La chiave resta su questo computer e viene inviata '+
+   'solo a Google. Le immagini non vengono salvate: ricaricale a ogni sessione. Analisi e '+
+   'codifiche restano nel browser, ma per conservarle davvero esportale.','The key stays on this '+
+   'computer and is sent only to Google. Images are not saved: load them again at every session. '+
+   'Analyses and codings stay in the browser, but to really keep them, export them.')+'</p>'+
+   '<div class="row" style="margin-top:14px">'+
+   '<button class="btn" id="cfgSave">'+L('Salva','Save')+'</button>'+
+   '<button class="btn ghost" id="expJson">'+L('Esporta JSON','Export JSON')+'</button>'+
+   '<button class="btn ghost" id="expCsv">'+L('Esporta CSV','Export CSV')+'</button>'+
+   '</div>';
+  document.getElementById('cfgSave').onclick=()=>{
+    state.cfg.key=document.getElementById('cfgKey').value.trim();
+    state.cfg.model=document.getElementById('cfgModel').value||'gemini-3.8-flash';
+    state.cfg.maxTokens=parseInt(document.getElementById('cfgTok').value,10)||4096;
+    state.cfg.noThinking=document.getElementById('cfgThink').checked;
+    store.set('cfg',state.cfg); toast(L('Impostazioni salvate.','Settings saved.'));
+  };
+  document.getElementById('expJson').onclick=exportJson;
+  document.getElementById('expCsv').onclick=exportCsv;
+  document.getElementById('btnModels').onclick=listModels;
+}
+
+/* Modelli per l'analisi, divisi per piano. Fonte: ai.google.dev/gemini-api/docs/pricing */
+const MODELLI=[
+  {id:'gemini-3.8-flash',      piano:'free', nota:'Flash più recente',            en:'latest Flash'},
+  {id:'gemini-3.6-flash',      piano:'free', nota:'Flash, generazione precedente', en:'Flash, previous generation'},
+  {id:'gemini-3.5-flash-lite', piano:'free', nota:'veloce ed economico',          en:'fast and cheap'},
+  {id:'gemini-3.1-flash-lite', piano:'free', nota:'veloce ed economico',          en:'fast and cheap'},
+  {id:'gemini-3-flash-preview',piano:'free', nota:'anteprima',                    en:'preview'},
+  {id:'gemini-4-argon',        piano:'paid', nota:'modello di punta',             en:'flagship model'},
+  {id:'gemini-3.1-pro-preview',piano:'paid', nota:'Pro, anteprima',               en:'Pro, preview'}
+];
+/* dismessi o ad accesso limitato: non li propongo */
+const ESCLUSI=/^gemini-(1\.|2\.)|^gemini-3\.5-flash$|^gemini-3-pro-preview$|^gemini-3\.1-flash-lite-preview$/;
+const GRUPPI={free:['Gratuiti (piano free, con limiti di frequenza)','Free (free tier, rate-limited)'],
+  paid:['Solo a pagamento','Paid only'],altro:['Altri dal tuo account (piano non verificato)','Others from your account (tier not verified)']};
+const gruppo=g=>L(GRUPPI[g][0],GRUPPI[g][1]);
+function modelOptions(){
+  const extra=(state.cfg.extraModels||[]).filter(id=>!MODELLI.some(m=>m.id===id) && !ESCLUSI.test(id));
+  /* una scelta salvata che non è più proposta (es. un modello dismesso) passa al predefinito */
+  if(!MODELLI.some(m=>m.id===state.cfg.model) && extra.indexOf(state.cfg.model)<0) state.cfg.model=MODELLI[0].id;
+  const nonDisp=state.cfg.unavailable||[];
+  const opt=(id,nota)=>{
+    const no=nonDisp.indexOf(id)>=0;
+    return '<option value="'+esc(id)+'"'+(id===state.cfg.model?' selected':'')+'>'+esc(id)+
+      (nota?' — '+esc(nota):'')+(no?L(' (non disponibile per la tua chiave)',' (not available for your key)'):'')+'</option>';
+  };
+  let h='';
+  ['free','paid'].forEach(g=>{
+    h+='<optgroup label="'+esc(gruppo(g))+'">'+MODELLI.filter(m=>m.piano===g).map(m=>opt(m.id,L(m.nota,m.en))).join('')+'</optgroup>';
+  });
+  if(extra.length) h+='<optgroup label="'+esc(gruppo('altro'))+'">'+extra.sort().map(id=>opt(id,'')).join('')+'</optgroup>';
+  return h;
+}
+
+async function listModels(){
+  const key=document.getElementById('cfgKey').value.trim()||state.cfg.key;
+  if(!key){ toast(L('Inserisci prima la chiave.','Enter the key first.')); return }
+  const box=document.getElementById('modelList');
+  box.innerHTML='<p class="note">'+L('Richiesta in corso…','Requesting…')+'</p>';
+  try{
+    const res=await fetch('https://generativelanguage.googleapis.com/v1beta/models?pageSize=200',
+      {headers:{'x-goog-api-key':key}});
+    const data=await res.json();
+    if(!res.ok) throw new Error((data.error&&data.error.message)||('HTTP '+res.status));
+    const tutti=(data.models||[]).filter(m=>(m.supportedGenerationMethods||[]).indexOf('generateContent')>=0)
+      .map(m=>m.name.replace(/^models\//,''));
+    const ok=tutti.filter(n=>/^gemini-/.test(n) && !ESCLUSI.test(n) && !/embedding|aqa|image|banana|tts|audio|live|transcribe|robotics|computer-use|omni/.test(n));
+    const scelto=document.getElementById('cfgModel').value;
+    state.cfg.extraModels=ok.filter(id=>!MODELLI.some(m=>m.id===id));
+    state.cfg.unavailable=MODELLI.map(m=>m.id).filter(id=>tutti.indexOf(id)<0);
+    const sel=document.getElementById('cfgModel');
+    state.cfg.model=scelto; sel.innerHTML=modelOptions(); sel.value=scelto;
+    store.set('cfg',state.cfg);
+    box.innerHTML='<p class="note">'+L('La tua chiave vede ','Your key sees ')+ok.length+L(' modelli adatti',' suitable models')+
+      (state.cfg.unavailable.length?'; '+state.cfg.unavailable.length+L(' dell\'elenco non sono disponibili',' in the list are not available'):'')+
+      (state.cfg.extraModels.length?'; '+state.cfg.extraModels.length+L(' aggiunti in fondo',' added at the bottom'):'')+'. '+
+      L('I modelli a pagamento compaiono anche con una chiave gratuita, ma rispondono con un errore di quota.',
+        'Paid models also appear with a free key, but answer with a quota error.')+'</p>';
+  }catch(e){ box.innerHTML='<p class="note" style="color:var(--flag)">'+esc(e.message)+'</p>' }
+}
+
+document.getElementById('nCredTog').onclick=(e)=>{
+  const box=document.getElementById('nCred');
+  const aperto=box.classList.toggle('hidden')===false;
+  e.currentTarget.setAttribute('aria-expanded',String(aperto));
+};
+document.getElementById('btnReload').onclick=()=>{
+  if(state.cfg.notionToken && state.cfg.notionDb && location.protocol.startsWith('http')){
+    document.querySelector('.modes button[data-mode="notion"]').click();
+    toast(L('Premi Sincronizza per rileggere il database.','Press Sync to read the database again.'));
+  } else {
+    document.getElementById('fileFolders').value='';
+    document.getElementById('fileFolders').click();
+  }
+};
+document.getElementById('btnDrawer').onclick=()=>openDrawer(true);
+document.getElementById('btnDrawerClose').onclick=()=>openDrawer(false);
+document.getElementById('scrim').onclick=()=>openDrawer(false);
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') openDrawer(false) });
+
+/* --- modi di ingresso -------------------------------------------- */
+document.querySelectorAll('.modes button').forEach(b=>b.onclick=()=>{
+  state.ingest=b.dataset.mode;
+  document.querySelectorAll('.modes button').forEach(x=>
+    x.setAttribute('aria-current',String(x.dataset.mode===state.ingest)));
+  document.getElementById('modeUpload').classList.toggle('hidden',state.ingest!=='upload');
+  document.getElementById('modeNotion').classList.toggle('hidden',state.ingest!=='notion');
+  const t=document.getElementById('nToken'), d=document.getElementById('nDb');
+  if(t&&!t.value) t.value=state.cfg.notionToken||'';
+  if(d&&!d.value) d.value=state.cfg.notionDb||'';
+  const sel=document.getElementById('nProp');
+  if(sel && !sel.options.length){
+    sel.innerHTML='<option value="">'+L('— nessun filtro —','— no filter —')+'</option>'+
+      META.map(m=>'<option value="'+esc(m.k)+'"'+
+        (m.k==='Tipologia'?' selected':'')+'>'+esc(mlabel(m.k))+'</option>').join('');
+    const v=document.getElementById('nVal');
+    if(v && !v.value) v.value='specimen';
+  }
+});
+
+document.getElementById('btnNotion').onclick=async (ev)=>{
+  const b=ev.currentTarget;
+  const tok=document.getElementById('nToken').value.trim();
+  const db=document.getElementById('nDb').value.trim();
+  const conImmagini=document.getElementById('nImg').checked;
+  const prop=document.getElementById('nProp').value;
+  const val=document.getElementById('nVal').value.trim();
+  const max=0;
+  let filtro=null;
+  if(prop && val){
+    const d=metaDef(prop);
+    const CHK=['Esempi applicativi','Descrizione carattere'];
+    filtro = CHK.indexOf(prop)>=0
+      ? {property:prop, checkbox:{equals:/^(s[iì]|yes|true|1|x)$/i.test(val)}}
+      : d && d.multi
+      ? {property:prop, multi_select:{contains:val}}
+      : {property:prop, rich_text:{contains:val}};
+  }
+  if(!tok||!db){ toast(L('Servono token e ID del database.','Token and database ID are required.')); return }
+  state.cfg.notionToken=tok; state.cfg.notionDb=db; store.set('cfg',state.cfg);
+  if(conImmagini && !location.protocol.startsWith('http')){
+    toast(L('Per scaricare le immagini serve il ponte locale: node proxy-notion.mjs, '+
+      'poi apri localhost:8000.','Downloading images needs the local bridge: node proxy-notion.mjs, '+
+      'then open localhost:8000.'));
+    return;
+  }
+  b.disabled=true; b.textContent=L('Lettura…','Reading…');
+  try{
+    const pagine=await notionQuery(tok,db,filtro,max);
+    let nuovi=0, aggiornati=0, senzaFoto=0, scaricate=0;
+    for(let i=0;i<pagine.length;i++){
+      const flat=flattenNotion(pagine[i]);
+      const id=(flat.__title||'').trim();
+      if(!id) continue;
+      const foto=flat.__files||[];
+      let rec=state.records.find(r=>r.id===id);
+      if(!rec){
+        if(!conImmagini) continue;               // senza immagini non creo record vuoti
+        if(!foto.length){ senzaFoto++; continue }
+        rec={id,files:[],urls:[],cover:0,meta:{},runs:[],manual:null,corretta:null,revealed:false};
+        state.records.push(rec); nuovi++;
+      } else aggiornati++;
+      Object.keys(flat).forEach(k=>{ if(k.slice(0,2)!=='__') rec.meta[k]=flat[k] });
+      const salvato=savedResults[id];
+      if(salvato && !rec.runs.length){
+        rec.runs=salvato.runs||[]; rec.manual=salvato.manual||null;
+        rec.corretta=salvato.corretta||null; rec.revealed=!!salvato.revealed;
+      }
+      if(conImmagini){
+        if(!foto.length){ continue }
+        if(rec.files.length) continue;           // già caricate a mano: non le sostituisco
+        b.textContent=L('Immagini ','Images ')+(i+1)+'/'+pagine.length;
+        for(const f of foto){
+          try{
+            const r=await fetch('/file?url='+encodeURIComponent(f.url));
+            if(!r.ok) continue;
+            const blob=await r.blob();
+            const nome=f.name.replace(/[^\w.\-]+/g,'_');
+            rec.files.push(new File([blob],nome,{type:blob.type||'image/jpeg'}));
+            rec.urls.push(URL.createObjectURL(blob));
+            scaricate++;
+          }catch(e){}
+        }
+        if(rec.cover>=rec.files.length) rec.cover=0;
+      }
+    }
+    state.records.sort((a,b)=>natural(a.id,b.id));
+    render();
+    let msg=pagine.length+(filtro?L(' pagine filtrate',' pages filtered'):L(' pagine lette',' pages read'))+'. '+
+      nuovi+L(' record nuovi, ',' new records, ')+aggiornati+L(' aggiornati',' updated');
+    if(conImmagini) msg+=', '+scaricate+L(' immagini scaricate',' images downloaded');
+    if(senzaFoto) msg+='. '+senzaFoto+(senzaFoto===1?L(' pagina saltata perché senza foto',' page skipped: no photos')
+      :L(' pagine saltate perché senza foto',' pages skipped: no photos'));
+    toast(msg+'.');
+  }catch(e){ toast(e.message) }
+  finally{ b.disabled=false; b.textContent=L('Sincronizza','Sync') }
+};
+
+async function notionQuery(token,db,filtro,max){
+  const out=[]; let cursor=null;
+  const limite = max>0 ? max : Infinity;
+  for(let i=0;i<40;i++){
+    let res;
+    try{
+      const base = location.protocol.startsWith('http')
+        ? '/notion/databases/' : 'https://api.notion.com/v1/databases/';
+      res=await fetch(base+encodeURIComponent(db)+'/query',{
+        method:'POST',
+        headers:{'Authorization':'Bearer '+token,'Notion-Version':'2022-06-28',
+                 'Content-Type':'application/json'},
+        body:JSON.stringify(Object.assign(
+          {page_size: Math.min(100, limite===Infinity?100:limite-out.length)},
+          cursor?{start_cursor:cursor}:{},
+          filtro?{filter:filtro}:{}))
+      });
+    }catch(err){
+      throw new Error(L('Notion non raggiungibile. Se hai aperto il file con doppio clic, '+
+        'avvia il ponte locale: node proxy-notion.mjs, poi vai su localhost:8000. '+
+        'In alternativa esporta il database in CSV e caricalo con Metadati.',
+        'Notion not reachable. If you opened the file with a double click, start the local '+
+        'bridge: node proxy-notion.mjs, then go to localhost:8000. Alternatively export the '+
+        'database as CSV and load it with Metadata.'));
+    }
+    const data=await res.json();
+    if(!res.ok) throw new Error('Notion: '+(data.message||res.status));
+    out.push(...(data.results||[]));
+    if(out.length>=limite){ out.length=limite; break }
+    if(!data.has_more) break;
+    cursor=data.next_cursor;
+  }
+  return out;
+}
+function flattenNotion(pg){
+  const o={}; const props=pg.properties||{};
+  Object.keys(props).forEach(k=>{
+    const p=props[k]; let v='';
+    switch(p.type){
+      case 'title': o.__title=(p.title||[]).map(t=>t.plain_text).join(''); v=''; break;
+      case 'rich_text': v=(p.rich_text||[]).map(t=>t.plain_text).join(''); break;
+      case 'select': v=p.select?p.select.name:''; break;
+      case 'multi_select': v=(p.multi_select||[]).map(x=>x.name).join('; '); break;
+      case 'number': v=p.number==null?'':String(p.number); break;
+      case 'checkbox': v=p.checkbox?'sì':'no'; break;
+      case 'date': v=p.date?p.date.start:''; break;
+      case 'url': v=p.url||''; break;
+      case 'files':
+        o.__files=(p.files||[]).map(f=>({
+          name:f.name||'immagine',
+          url:(f.file&&f.file.url)||(f.external&&f.external.url)||''
+        })).filter(f=>f.url);
+        v=''; break;
+      default: v='';
+    }
+    if(v!=='') o[k]=v;
+  });
+  return o;
+}
+
+/* --- export ------------------------------------------------------ */
+function exportJson(){
+  const out=state.records.filter(r=>r.runs.length||r.manual).map(r=>({
+    id:r.id, immagini:r.files.map(f=>f.name), copertina:r.files[r.cover]?r.files[r.cover].name:null,
+    metadati:r.meta, colore_dominante:r.colore||null, evidenze:r.evidenze||[], codifica_cieca:r.manual, codifica_corretta:r.corretta, analisi:r.runs
+  }));
+  download('specimen-reading-room.json',JSON.stringify(out,null,2),'application/json');
+}
+function exportCsv(){
+  const cols=['record',L('colore dominante','dominant colour'),L('famiglia cromatica','colour family'),L('quota %','share %'),
+    ...state.metaCols.map(mlabel),...PARAMS.map(plabel),L('tema','theme'),L('parole_chiave','keywords'),L('n_incertezze','n_uncertainties'),'n_run'];
+  const lines=[cols];
+  state.records.filter(r=>r.runs.length).forEach(r=>{
+    const run=lastRun(r);
+    const kw=((run.artefatto&&run.artefatto.parole_chiave)||[]).map(k=>k.originale).join('; ');
+    lines.push([r.id,(r.colore&&r.colore.hex)||'',tcol((r.colore&&r.colore.famiglia)||''),
+      (r.colore&&r.colore.quota)||'',...state.metaCols.map(c=>r.meta[c]||''),
+      ...PARAMS.map(p=>fmt(valOf(r.corretta||run,p))),
+      (run.artefatto&&run.artefatto.tema_dominante)||'', kw,
+      (run.incertezze||[]).length, r.runs.length]);
+  });
+  const csv=lines.map(l=>l.map(c=>{
+    const s=String(c==null?'':c);
+    return /[",\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s;
+  }).join(',')).join('\n');
+  download('specimen-reading-room.csv',csv,'text/csv');
+}
+function download(name,txt,mime){
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([txt],{type:mime}));
+  a.download=name; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+}
+
+/* --- utilità ----------------------------------------------------- */
+function esc(s){ return String(s==null?'':s)
+  .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;') }
+let toastTimer;
+function toast(msg){
+  let t=document.querySelector('.toast');
+  if(!t){t=document.createElement('div');t.className='toast';document.body.appendChild(t)}
+  t.textContent=msg; clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.remove(),4200);
+}
+
+/* online la sincronizzazione con Notion non è disponibile (serve il ponte locale):
+   la scheda Notion compare solo aprendo il file in locale o da localhost */
+const IN_LOCALE = location.protocol==='file:' || /^(localhost|127\.0\.0\.1)$/.test(location.hostname);
+if(!IN_LOCALE) document.querySelector('.modes').classList.add('hidden');
+
+const STATIC=[
+  ['[data-view="scheda"]','Scheda','Record'], ['[data-view="corpus"]','Corpus','Corpus'],
+  ['#btnDrawer','Impostazioni','Settings'], ['[data-mode="upload"]','Caricamento','Upload'],
+  ['#btnFolders','Carica cartelle','Load folders'], ['#btnCsv','Metadati','Metadata'],
+  ['#nCredTog','Credenziali','Credentials'], ['#lblTok','Token di integrazione','Integration token'],
+  ['#lblDb','ID del database','Database ID'], ['#lblWhere','Importa solo dove','Import only where'],
+  ['#lblImg','Scarica anche le immagini','Also download images'], ['#btnNotion','Sincronizza','Sync'],
+  ['#btnReload','ricarica','reload'], ['#drawerTitle','Impostazioni','Settings'],
+  ['#btnDrawerClose','chiudi','close']
+];
+function applyStatic(){
+  document.documentElement.lang=LANG;
+  STATIC.forEach(([sel,it,en])=>{ const e=document.querySelector(sel); if(e) e.textContent=L(it,en) });
+  document.getElementById('nNote').innerHTML=L('Crea i record dal database: il titolo della pagina '+
+    'diventa l\'identificativo e le immagini del campo Foto la sequenza. Gli indirizzi di Notion '+
+    'scadono dopo un\'ora, quindi le immagini vengono scaricate a ogni sessione. Richiede il '+
+    'ponte locale <code>proxy-notion.mjs</code>.','Creates records from the database: the page '+
+    'title becomes the identifier and the images in the Photo field the sequence. Notion links '+
+    'expire after an hour, so images are downloaded at every session. Requires the local bridge '+
+    '<code>proxy-notion.mjs</code>.');
+  document.getElementById('nDb').placeholder=L('ID del database','Database ID');
+  document.getElementById('btnLang').textContent = LANG==='en' ? 'IT' : 'EN';
+  const ns=document.getElementById('nProp'); if(ns) ns.innerHTML='';   // si ricostruisce nella lingua giusta
+}
+document.getElementById('btnLang').onclick=()=>{
+  LANG = LANG==='en' ? 'it' : 'en';
+  try{ localStorage.setItem('srr:lang',LANG) }catch(e){}
+  applyStatic(); render();
+  if(document.getElementById('drawer').classList.contains('on')) renderDrawer();
+  if(state.ingest==='notion') document.querySelector('.modes button[data-mode="notion"]').click();
+};
+
+applyStatic();
+render();
+</script>
+</body>
+</html>

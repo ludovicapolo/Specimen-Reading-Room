@@ -1,0 +1,26 @@
+cff-version: 1.2.0
+message: "Se usi questo strumento, citalo così. / If you use this tool, please cite it as below."
+type: software
+title: "Specimen Reading Room"
+abstract: >-
+  A browser-based tool for the assisted reading of type specimens: an AI model
+  (Google Gemini) fills in a closed-vocabulary observation grid from photographs
+  of a specimen, which the researcher can verify, correct and compare with a
+  blind manual coding. Developed within the doctoral research "La mediazione
+  della tipografia in Europa e Italia: specimen ed ephemera promozionali per
+  una storiografia tra type e graphic design (1952–1978)".
+authors:
+  - family-names: Polo
+    given-names: Ludovica
+    affiliation: "Università Iuav di Venezia"
+    # orcid: "https://orcid.org/0000-0000-0000-0000"
+version: 1.0.0
+date-released: 2026-11-25
+license: MIT
+repository-code: "https://github.com/ludovicapolo/Specimen-Reading-Room"
+keywords:
+  - type specimens
+  - typography
+  - graphic design history
+  - digital humanities
+  - vision-language models
